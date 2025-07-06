@@ -3,16 +3,18 @@ from datetime import datetime
 from geopy.geocoders import Nominatim
 import folium
 import streamlit.components.v1 as components
-import plotly.graph_objects as go
+import plotly.express as px
+import pandas as pd
 
+# ================== PENGATURAN HALAMAN ==================
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
-# Layout dua kolom
+# ================== LAYOUT UTAMA ==================
 col1, col2 = st.columns([1.5, 1.0])
 
-# ==================== KOLOM KIRI ====================
+# ================== KOLOM KIRI ==================
 with col1:
     st.markdown("### 🏙️ Masukkan Nama Kota")
     kota = st.text_input(" ", "Malang").strip().title()
@@ -85,40 +87,33 @@ with col1:
                 selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
                 st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} sampai {selesai_fmt}*")
 
-            # Grafik Timeline
+            # Grafik Timeline (fix)
             st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
 
-            names = []
-            start_dates = []
-            end_dates = []
+            df_durasi = []
             for nama, (start, end) in skala_durasi.items():
-                names.append(nama)
-                start_dates.append(datetime.strptime(start, "%Y-%m-%d"))
-                end_dates.append(datetime.strptime(end, "%Y-%m-%d"))
+                df_durasi.append({
+                    "Skala": nama,
+                    "Mulai": datetime.strptime(start, "%Y-%m-%d"),
+                    "Selesai": datetime.strptime(end, "%Y-%m-%d")
+                })
 
-            durasi_hari = [(end - start).days for start, end in zip(start_dates, end_dates)]
-
-            fig = go.Figure()
-            warna = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]
-
-            for i, nama in enumerate(names):
-                fig.add_trace(go.Bar(
-                    x=[durasi_hari[i]],
-                    y=[nama],
-                    base=start_dates[i],
-                    orientation='h',
-                    marker=dict(color=warna[i % len(warna)]),
-                    name=nama,
-                    hovertemplate=f"{nama}<br>%{{base|%d %b}} → %{{x}} hari"
-                ))
-
+            df = pd.DataFrame(df_durasi)
+            fig = px.timeline(
+                df,
+                x_start="Mulai",
+                x_end="Selesai",
+                y="Skala",
+                color="Skala",
+                title="📈 Grafik Timeline Skala Atmosfer"
+            )
+            fig.update_yaxes(autorange="reversed")
             fig.update_layout(
-                xaxis=dict(title="Tanggal", type='date'),
-                yaxis=dict(title="Skala Atmosfer"),
-                height=350,
-                showlegend=False,
-                plot_bgcolor="#f9f9f9",
-                margin=dict(l=10, r=10, t=30, b=30)
+                height=400,
+                margin=dict(l=10, r=10, t=30, b=30),
+                xaxis_title="Tanggal",
+                yaxis_title="Skala Atmosfer",
+                plot_bgcolor="#f9f9f9"
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -167,7 +162,7 @@ with col1:
     else:
         st.warning("Silakan masukkan nama kota terlebih dahulu.")
 
-# ==================== KOLOM KANAN ====================
+# ================== KOLOM KANAN ==================
 with col2:
     st.markdown("### 📘 Penjelasan Skala Atmosfer")
 
