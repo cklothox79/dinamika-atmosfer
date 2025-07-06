@@ -37,19 +37,6 @@ if kota:
         ).add_to(m)
         st_folium(m, width=700, height=450)
 
-        # Deteksi wilayah pengaruh
-        wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
-        if kota in wilayah_dipengaruhi:
-            st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
-            st.markdown("""
-            - 🌐 **MJO aktif fase 4** (potensi hujan meningkat)
-            - 🌊 **IOD negatif** (kondisi lebih basah dari normal)
-            - 💧 **La Niña ringan** (penambahan curah hujan)
-            - 🌬️ **Kelvin Wave** (hujan konvektif sore-malam)
-            """)
-        else:
-            st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi memengaruhi wilayah ini saat ini.")
-
         st.divider()
 
         # Indeks ENSO & IOD (simulasi)
@@ -84,6 +71,21 @@ if kota:
         """, unsafe_allow_html=True)
 
         st.caption("📈 Nilai indeks adalah simulasi dan dapat diganti dengan data real-time (NOAA, BOM, dll).")
+
+        st.divider()
+
+        # Deteksi wilayah pengaruh
+        wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
+        if kota in wilayah_dipengaruhi:
+            st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
+            st.markdown("""
+            - 🌐 **MJO aktif fase 4** (potensi hujan meningkat)
+            - 🌊 **IOD negatif** (kondisi lebih basah dari normal)
+            - 💧 **La Niña ringan** (penambahan curah hujan)
+            - 🌬️ **Kelvin Wave** (hujan konvektif sore-malam)
+            """)
+        else:
+            st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi memengaruhi wilayah ini saat ini.")
 
     else:
         st.error("❗ Kota tidak ditemukan. Mohon cek kembali ejaannya.")
