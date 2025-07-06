@@ -33,7 +33,6 @@ if kota:
         ).add_to(m)
         st_folium(m, width=700, height=450)
 
-        # --- Contoh Deteksi Skala Atmosfer ---
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi:
             st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
@@ -46,7 +45,41 @@ if kota:
         else:
             st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi memengaruhi wilayah ini saat ini.")
 
-        st.caption("📡 Data bersifat simulasi. Versi real-time akan terhubung ke API BMKG/NOAA.")
+        st.divider()
+
+        # --- INDEKS ATMOSFER GLOBAL (simulasi) ---
+        st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
+
+        enso_index = -0.7
+        iod_index = -0.4
+
+        if enso_index >= 0.5:
+            enso_status = "El Niño"
+            color_enso = "orange"
+        elif enso_index <= -0.5:
+            enso_status = "La Niña"
+            color_enso = "blue"
+        else:
+            enso_status = "Netral"
+            color_enso = "gray"
+
+        if iod_index >= 0.4:
+            iod_status = "Positif"
+            color_iod = "red"
+        elif iod_index <= -0.4:
+            iod_status = "Negatif"
+            color_iod = "blue"
+        else:
+            iod_status = "Netral"
+            color_iod = "gray"
+
+        st.markdown(f"""
+        #### 🌀 ENSO Index: `{enso_index}` → <span style='color:{color_enso}'><b>{enso_status}</b></span>  
+        #### 🌊 IOD Index: `{iod_index}` → <span style='color:{color_iod}'><b>{iod_status}</b></span>
+        """, unsafe_allow_html=True)
+
+        st.caption("📈 Nilai indeks adalah simulasi dan dapat diganti dengan data real-time (NOAA, BOM, dll).")
+
     else:
         st.error("❗ Kota tidak ditemukan. Mohon cek kembali ejaannya.")
 else:
