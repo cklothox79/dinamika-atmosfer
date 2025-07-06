@@ -4,7 +4,6 @@ from geopy.geocoders import Nominatim
 import folium
 import streamlit.components.v1 as components
 
-# Konfigurasi halaman
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
@@ -22,7 +21,6 @@ if kota:
     if location:
         lat, lon = location.latitude, location.longitude
 
-        # Peta lokasi
         st.markdown("### 🗺️ Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
@@ -35,11 +33,11 @@ if kota:
             popup="Zona pengaruh atmosfer",
         ).add_to(m)
 
-        # Tampilkan peta dengan HTML compact
+        # Peta tampil dengan iframe agar ringkas
         map_html = m._repr_html_()
         components.html(map_html, height=350, width=700)
 
-        # Indeks ENSO dan IOD
+        # Indeks ENSO & IOD
         st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
 
         enso_index = -0.7
@@ -74,6 +72,25 @@ if kota:
 
         st.divider()
 
+        # --- DURASI SKALA ---
+        st.markdown("### ⏱️ **Durasi Skala Atmosfer Aktif**")
+
+        skala_durasi = {
+            "MJO Fase 4": ("2025-07-01", "2025-07-10"),
+            "IOD Negatif": ("2025-06-20", "2025-08-15"),
+            "La Niña": ("2025-06-15", "2025-08-31"),
+            "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
+        }
+
+        for skala, (mulai, selesai) in skala_durasi.items():
+            mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
+            selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
+            st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} sampai {selesai_fmt}*")
+
+        st.caption("🕒 Perkiraan durasi simulasi. Gunakan data resmi untuk akurasi maksimal.")
+
+        st.divider()
+
         # Deteksi skala regional aktif
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi:
@@ -89,7 +106,7 @@ if kota:
 
         st.divider()
 
-        # Deteksi Skala Lokal
+        # Skala lokal
         st.markdown("### 🧭 **Skala Atmosfer Lokal yang Mungkin Aktif**")
 
         skala_lokal = []
@@ -103,12 +120,7 @@ if kota:
         elif kota in ["Surabaya", "Sidoarjo", "Jakarta", "Bekasi"]:
             skala_lokal += [
                 "🌬️ BBLJ *(konvergensi lokal & panas kota)*",
-                "🔁 Konvergensi Lokal *(akibat angin darat–laut)*"
-            ]
-        elif kota in ["Padang", "Manado", "Ambon"]:
-            skala_lokal += [
-                "🌊 Gelombang Kelvin *(konvektif)*",
-                "🌬️ Angin Laut–Darat"
+                "🔁 Konvergensi Lokal *(angin darat–laut)*"
             ]
         else:
             skala_lokal += [
@@ -119,7 +131,7 @@ if kota:
         for skala in skala_lokal:
             st.markdown(f"- ✅ {skala}")
 
-        st.caption("📌 Skala lokal ditentukan berdasarkan lokasi dan topografi. Untuk validasi penuh, gunakan data angin & citra satelit.")
+        st.caption("📌 Skala lokal disimulasikan berdasarkan lokasi dan musim.")
 
     else:
         st.error("❗ Kota tidak ditemukan. Mohon cek kembali ejaannya.")
