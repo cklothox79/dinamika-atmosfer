@@ -86,6 +86,55 @@ with col1:
                 mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
                 selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
                 st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} sampai {selesai_fmt}*")
+import plotly.graph_objects as go
+
+# Data durasi (sama seperti sebelumnya)
+skala_durasi = {
+    "MJO Fase 4": ("2025-07-01", "2025-07-10"),
+    "IOD Negatif": ("2025-06-20", "2025-08-15"),
+    "La Niña": ("2025-06-15", "2025-08-31"),
+    "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
+}
+
+# Konversi data durasi ke format grafik
+names = []
+start_dates = []
+end_dates = []
+
+for nama, (start, end) in skala_durasi.items():
+    names.append(nama)
+    start_dates.append(datetime.strptime(start, "%Y-%m-%d"))
+    end_dates.append(datetime.strptime(end, "%Y-%m-%d"))
+
+# Hitung durasi (dalam hari)
+durasi_hari = [(end - start).days for start, end in zip(start_dates, end_dates)]
+
+# Buat Gantt Chart
+fig = go.Figure()
+
+warna = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]  # warna beda tiap skala
+
+for i, nama in enumerate(names):
+    fig.add_trace(go.Bar(
+        x=[durasi_hari[i]],
+        y=[nama],
+        base=start_dates[i],
+        orientation='h',
+        marker=dict(color=warna[i % len(warna)]),
+        name=nama,
+        hovertemplate=f"{nama}<br>%{{base|%d %b}} → %{{x}} hari"
+    ))
+
+fig.update_layout(
+    title="⏱️ Timeline Skala Atmosfer Aktif",
+    xaxis=dict(title="Tanggal", type='date'),
+    yaxis=dict(title="Skala Atmosfer"),
+    height=350,
+    showlegend=False,
+    plot_bgcolor="#f9f9f9"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
             st.divider()
 
