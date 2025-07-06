@@ -3,15 +3,16 @@ from datetime import datetime
 from geopy.geocoders import Nominatim
 import folium
 import streamlit.components.v1 as components
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
 # Layout dua kolom
-col1, col2 = st.columns([1.5, 1.0])  # kiri:dinamis, kanan:sidebar tetap
+col1, col2 = st.columns([1.5, 1.0])
 
-# ========== KOLOM KIRI ========== #
+# ==================== KOLOM KIRI ====================
 with col1:
     st.markdown("### 🏙️ Masukkan Nama Kota")
     kota = st.text_input(" ", "Malang").strip().title()
@@ -42,7 +43,6 @@ with col1:
 
             # Indeks ENSO & IOD
             st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
-
             enso_index = -0.7
             iod_index = -0.4
 
@@ -71,10 +71,8 @@ with col1:
             #### 🌊 IOD Index: `{iod_index}` → <span style='color:{color_iod}'><b>{iod_status}</b></span>
             """, unsafe_allow_html=True)
 
-            st.divider()
-
-            # Durasi Skala
-            st.markdown("### ⏱️ **Durasi Skala Atmosfer Aktif**")
+            # Durasi Skala Aktif
+            st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
             skala_durasi = {
                 "MJO Fase 4": ("2025-07-01", "2025-07-10"),
                 "IOD Negatif": ("2025-06-20", "2025-08-15"),
@@ -86,59 +84,48 @@ with col1:
                 mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
                 selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
                 st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} sampai {selesai_fmt}*")
-import plotly.graph_objects as go
 
-# Data durasi (sama seperti sebelumnya)
-skala_durasi = {
-    "MJO Fase 4": ("2025-07-01", "2025-07-10"),
-    "IOD Negatif": ("2025-06-20", "2025-08-15"),
-    "La Niña": ("2025-06-15", "2025-08-31"),
-    "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
-}
+            # Grafik Timeline
+            st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
 
-# Konversi data durasi ke format grafik
-names = []
-start_dates = []
-end_dates = []
+            names = []
+            start_dates = []
+            end_dates = []
+            for nama, (start, end) in skala_durasi.items():
+                names.append(nama)
+                start_dates.append(datetime.strptime(start, "%Y-%m-%d"))
+                end_dates.append(datetime.strptime(end, "%Y-%m-%d"))
 
-for nama, (start, end) in skala_durasi.items():
-    names.append(nama)
-    start_dates.append(datetime.strptime(start, "%Y-%m-%d"))
-    end_dates.append(datetime.strptime(end, "%Y-%m-%d"))
+            durasi_hari = [(end - start).days for start, end in zip(start_dates, end_dates)]
 
-# Hitung durasi (dalam hari)
-durasi_hari = [(end - start).days for start, end in zip(start_dates, end_dates)]
+            fig = go.Figure()
+            warna = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]
 
-# Buat Gantt Chart
-fig = go.Figure()
+            for i, nama in enumerate(names):
+                fig.add_trace(go.Bar(
+                    x=[durasi_hari[i]],
+                    y=[nama],
+                    base=start_dates[i],
+                    orientation='h',
+                    marker=dict(color=warna[i % len(warna)]),
+                    name=nama,
+                    hovertemplate=f"{nama}<br>%{{base|%d %b}} → %{{x}} hari"
+                ))
 
-warna = ["#1f77b4", "#2ca02c", "#d62728", "#9467bd"]  # warna beda tiap skala
+            fig.update_layout(
+                xaxis=dict(title="Tanggal", type='date'),
+                yaxis=dict(title="Skala Atmosfer"),
+                height=350,
+                showlegend=False,
+                plot_bgcolor="#f9f9f9",
+                margin=dict(l=10, r=10, t=30, b=30)
+            )
 
-for i, nama in enumerate(names):
-    fig.add_trace(go.Bar(
-        x=[durasi_hari[i]],
-        y=[nama],
-        base=start_dates[i],
-        orientation='h',
-        marker=dict(color=warna[i % len(warna)]),
-        name=nama,
-        hovertemplate=f"{nama}<br>%{{base|%d %b}} → %{{x}} hari"
-    ))
-
-fig.update_layout(
-    title="⏱️ Timeline Skala Atmosfer Aktif",
-    xaxis=dict(title="Tanggal", type='date'),
-    yaxis=dict(title="Skala Atmosfer"),
-    height=350,
-    showlegend=False,
-    plot_bgcolor="#f9f9f9"
-)
-
-st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
 
             st.divider()
 
-            # Deteksi pengaruh regional
+            # Pengaruh Regional
             wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
             if kota in wilayah_dipengaruhi:
                 st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
@@ -153,11 +140,10 @@ st.plotly_chart(fig, use_container_width=True)
 
             st.divider()
 
-            # Skala lokal
-            st.markdown("### 🧭 **Skala Atmosfer Lokal yang Mungkin Aktif**")
+            # Skala Lokal
+            st.markdown("### 🧭 Skala Atmosfer Lokal yang Mungkin Aktif")
 
             skala_lokal = []
-
             if kota in ["Malang", "Batu", "Boyolali", "Garut"]:
                 skala_lokal += [
                     "🌄 Angin Lembah–Gunung *(aktif pagi & malam)*",
@@ -174,38 +160,36 @@ st.plotly_chart(fig, use_container_width=True)
                     "🌬️ Proses Lokal *(BBLJ, konvergensi mikro)*",
                     "☁️ Awan lokal akibat pemanasan permukaan"
                 ]
-
             for skala in skala_lokal:
                 st.markdown(f"- ✅ {skala}")
-
         else:
             st.error("❗ Kota tidak ditemukan.")
     else:
         st.warning("Silakan masukkan nama kota terlebih dahulu.")
 
-# ========== KOLOM KANAN (SIDEBAR PASIF) ========== #
+# ==================== KOLOM KANAN ====================
 with col2:
-    st.markdown("### 📘 **Skala Atmosfer**")
+    st.markdown("### 📘 Penjelasan Skala Atmosfer")
+
     st.markdown("#### 🌐 Skala Global")
     st.markdown("""
-    - **El Niño / La Niña**: Anomali suhu laut Pasifik, pengaruh besar pada curah hujan Indonesia.  
-    - **IOD**: Anomali suhu laut Samudra Hindia. Positif = kering, Negatif = basah.  
-    - **MJO**: Gangguan konvektif tropis bergerak ke timur, fase basah/kering.
+    - **El Niño / La Niña**: Gangguan suhu laut Pasifik, pengaruh besar terhadap musim hujan Indonesia.
+    - **IOD**: Anomali suhu Samudra Hindia. Positif = kering, Negatif = basah.
+    - **MJO**: Gangguan konvektif bergerak ke timur, memicu hujan fase tertentu.
     """)
 
     st.markdown("#### 🌍 Skala Regional")
     st.markdown("""
-    - **Gelombang Kelvin**: Gelombang tekanan tropis, membawa hujan konvektif sore–malam.  
-    - **BBLJ**: Belokan/Perlambatan Angin Lapisan Rendah → daerah konvergensi.  
-    - **ITCZ**: Zona pertemuan angin tropis utara–selatan, sumber hujan lebat.
+    - **Gelombang Kelvin**: Gelombang tropis memicu hujan sore-malam.
+    - **BBLJ**: Belokan angin di lapisan rendah, penyebab konvergensi.
+    - **ITCZ**: Zona pertemuan angin tropis, pemicu hujan lebat.
     """)
 
     st.markdown("#### 🧭 Skala Lokal")
     st.markdown("""
-    - **Angin Lembah–Gunung**: Sirkulasi lokal pagi & malam, bentuk awan orografis.  
-    - **Konvergensi Mikro**: Perbedaan suhu lokal (panas kota), lembab vs kering.  
-    - **Efek Urban**: Suhu tinggi kota → pemicu awan lokal & hujan petir.
+    - **Angin Lembah–Gunung**: Pola harian, memicu awan orografis.
+    - **Konvergensi Mikro**: Perbedaan suhu mikro, efek pemanasan lokal.
+    - **Efek Urban**: Kota panas memicu awan konvektif & hujan petir.
     """)
 
-    st.caption("📚 Informasi skala atmosfer disusun untuk edukasi dan interpretasi fenomena cuaca.")
-
+    st.caption("📚 Panel informasi tetap. Cocok untuk edukasi publik & siswa cuaca.")
