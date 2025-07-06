@@ -1,30 +1,27 @@
 import streamlit as st
-import folium
-from streamlit_folium import st_folium
 from datetime import datetime
 from geopy.geocoders import Nominatim
+import folium
+import streamlit.components.v1 as components
 
-# Konfigurasi halaman
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
-# Input nama kota
 st.markdown("### 🏙️ Masukkan Nama Kota")
 kota = st.text_input(" ", "Malang").strip().title()
 
 if kota:
     st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
 
-    # Geolokasi
     geolocator = Nominatim(user_agent="geoapi")
     location = geolocator.geocode(kota)
 
     if location:
         lat, lon = location.latitude, location.longitude
 
-        # Peta lokasi
         st.markdown("### 🗺️ Lokasi Kota di Peta")
+
         m = folium.Map(location=[lat, lon], zoom_start=6)
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
         folium.Circle(
@@ -36,11 +33,11 @@ if kota:
             popup="Zona pengaruh atmosfer",
         ).add_to(m)
 
-        # Peta ditampilkan lebih ringkas (compact)
-        st_folium(m, width=700, height=350)
-        st.markdown("<div style='margin-top: -30px'></div>", unsafe_allow_html=True)
+        # Simpan ke HTML dan tampilkan di iframe
+        map_html = m._repr_html_()
+        components.html(map_html, height=350, width=700)
 
-        # Indeks ENSO & IOD (simulasi)
+        # Langsung tampilkan indeks ENSO/IOD
         st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
 
         enso_index = -0.7
@@ -75,7 +72,6 @@ if kota:
 
         st.divider()
 
-        # Deteksi wilayah pengaruh
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi:
             st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
