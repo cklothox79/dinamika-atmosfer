@@ -35,9 +35,10 @@ if kota:
             fill_opacity=0.05,
             popup="Zona pengaruh atmosfer",
         ).add_to(m)
-        st_folium(m, width=700, height=450)
 
-        st.divider()
+        # Peta ditampilkan lebih ringkas (compact)
+        st_folium(m, width=700, height=350)
+        st.markdown("<div style='margin-top: -30px'></div>", unsafe_allow_html=True)
 
         # Indeks ENSO & IOD (simulasi)
         st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
