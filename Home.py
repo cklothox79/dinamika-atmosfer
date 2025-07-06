@@ -4,22 +4,26 @@ from streamlit_folium import st_folium
 from datetime import datetime
 from geopy.geocoders import Nominatim
 
+# Konfigurasi halaman
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
+# Input nama kota
 st.markdown("### 🏙️ Masukkan Nama Kota")
 kota = st.text_input(" ", "Malang").strip().title()
 
 if kota:
     st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
 
+    # Geolokasi
     geolocator = Nominatim(user_agent="geoapi")
     location = geolocator.geocode(kota)
 
     if location:
         lat, lon = location.latitude, location.longitude
 
+        # Peta lokasi
         st.markdown("### 🗺️ Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
@@ -33,6 +37,7 @@ if kota:
         ).add_to(m)
         st_folium(m, width=700, height=450)
 
+        # Deteksi wilayah pengaruh
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi:
             st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
@@ -47,7 +52,7 @@ if kota:
 
         st.divider()
 
-        # --- INDEKS ATMOSFER GLOBAL (simulasi) ---
+        # Indeks ENSO & IOD (simulasi)
         st.markdown("### 🌍 **Indeks Atmosfer Global Saat Ini**")
 
         enso_index = -0.7
