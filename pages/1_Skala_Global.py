@@ -6,6 +6,7 @@ from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Skala Global", layout="wide")
 st.title("🌐 Skala Atmosfer Global")
+st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
 col1, col2 = st.columns([1.6, 1.0])
 
@@ -51,6 +52,13 @@ with col1:
 
     st_folium(m, height=450, width=750)
 
+    st.markdown("### 🌊 Visualisasi Perbandingan El Niño dan La Niña")
+    st.image(
+        "https://files.oaiusercontent.com/file-1IfOf1Wjj0mWzU5hnBP6NELe?se=2025-07-07T16%3A30%3A00Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/jpeg&sig=LgE9yKTVN7O8DxRl7Es3UKp+XkSyxBM2RSkAXZRHg6s%3D",
+        caption="Perbandingan kondisi atmosfer dan laut pada El Niño vs La Niña.",
+        use_container_width=True
+    )
+
 with col2:
     st.markdown("### 📘 Penjelasan Mudah Dipahami")
     st.markdown("""
@@ -70,12 +78,3 @@ with col2:
     🌍 Semua fenomena ini saling memengaruhi dan berperan besar terhadap musim & cuaca kita.
     """)
     st.caption("📡 Disusun oleh Ferri Kusuma (STMKG) untuk edukasi masyarakat umum.")
-    # Tambahkan ini setelah st.title(...) atau di bagian paling bawah
-
-st.markdown("### 🌊 Visualisasi Perbandingan El Niño dan La Niña")
-st.image(
-    "https://files.oaiusercontent.com/file-1IfOf1Wjj0mWzU5hnBP6NELe?se=2025-07-07T16%3A30%3A00Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/jpeg&sig=LgE9yKTVN7O8DxRl7Es3UKp+XkSyxBM2RSkAXZRHg6s%3D",
-    caption="Perbandingan kondisi atmosfer dan laut pada El Niño vs La Niña.",
-    use_column_width=True
-)
-
