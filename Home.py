@@ -42,7 +42,7 @@ with col1:
 
     # Input manual kota (sinkron ke session)
     kota = st.text_input(" ", st.session_state.kota).strip().title()
-    st.session_state.kota = kota  # perbarui session dari input manual juga
+    st.session_state.kota = kota
 
     if kota:
         st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
@@ -50,6 +50,18 @@ with col1:
         location = geolocator.geocode(kota)
         if location:
             lat, lon = location.latitude, location.longitude
+
+            # 🌐 Informasi Lokasi Tambahan
+            reverse_loc = geolocator.reverse((lat, lon), language='id')
+            address = reverse_loc.raw.get("address", {})
+            provinsi = address.get("state", "Tidak Diketahui")
+            negara = address.get("country", "Tidak Diketahui")
+
+            st.markdown("### 🧭 Informasi Lokasi Lengkap")
+            st.markdown(f"- 🏙️ **Provinsi:** `{provinsi}`")
+            st.markdown(f"- 🗺️ **Negara:** `{negara}`")
+            st.markdown(f"- 📍 **Koordinat:** `{lat:.3f}, {lon:.3f}`")
+            st.markdown(f"- 🔗 [Lihat di Google Maps](https://www.google.com/maps?q={lat},{lon})")
 
             st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
             enso_index, iod_index = -0.7, -0.4
