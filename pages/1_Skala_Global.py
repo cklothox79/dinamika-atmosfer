@@ -70,3 +70,12 @@ with col2:
     🌍 Semua fenomena ini saling memengaruhi dan berperan besar terhadap musim & cuaca kita.
     """)
     st.caption("📡 Disusun oleh Ferri Kusuma (STMKG) untuk edukasi masyarakat umum.")
+    # Tambahkan ini setelah st.title(...) atau di bagian paling bawah
+
+st.markdown("### 🌊 Visualisasi Perbandingan El Niño dan La Niña")
+st.image(
+    "https://files.oaiusercontent.com/file-1IfOf1Wjj0mWzU5hnBP6NELe?se=2025-07-07T16%3A30%3A00Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/jpeg&sig=LgE9yKTVN7O8DxRl7Es3UKp+XkSyxBM2RSkAXZRHg6s%3D",
+    caption="Perbandingan kondisi atmosfer dan laut pada El Niño vs La Niña.",
+    use_column_width=True
+)
+
