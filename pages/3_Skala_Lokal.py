@@ -1,5 +1,3 @@
-# File: pages/3_Skala_Lokal.py
-
 import streamlit as st
 
 st.set_page_config(page_title="Skala Lokal", layout="wide")
