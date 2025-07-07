@@ -5,52 +5,68 @@ import folium
 from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Skala Global", layout="wide")
-st.title("🌎 Skala Atmosfer Global")
+st.title("🌐 Skala Atmosfer Global")
 
-st.markdown("""
-Fenomena skala global memengaruhi pola cuaca secara luas hingga lintas benua dan samudra.
+col1, col2 = st.columns([1.6, 1.0])
 
-#### 🌊 **ENSO (El Niño Southern Oscillation)**
-- Mengacu pada pemanasan (El Niño) atau pendinginan (La Niña) di Samudra Pasifik tengah dan timur.
-- El Niño → potensi kekeringan di Indonesia.
-- La Niña → peningkatan curah hujan.
+with col1:
+    st.markdown("""
+    Fenomena global adalah dinamika atmosfer dan laut yang memengaruhi iklim secara luas, termasuk Indonesia.
 
-#### 🌐 **IOD (Indian Ocean Dipole)**
-- Anomali suhu laut Samudra Hindia.
-- Positif → lebih kering di Indonesia.
-- Negatif → lebih lembap dan hujan meningkat.
-""")
+    ### 📌 Tiga Fenomena Utama
+    - **El Niño / La Niña** → perubahan suhu permukaan laut di Samudra Pasifik tengah–timur (zona Nino 3.4)
+    - **IOD (Indian Ocean Dipole)** → anomali suhu laut di Samudra Hindia tropis
+    - **MJO (Madden Julian Oscillation)** → gangguan konvektif tropis yang bergerak dari barat ke timur
 
-st.markdown("### 🗺️ Wilayah Pengaruh Skala Global")
+    Peta berikut menampilkan wilayah penting seperti zona **Nino 3.4**, lokasi pengamatan IOD, dan garis khatulistiwa.
+    """)
 
-# Inisialisasi peta
-m = folium.Map(location=[0, 120], zoom_start=3, tiles="CartoDB positron")
+    # Peta Interaktif
+    m = folium.Map(location=[0, -140], zoom_start=2, tiles="cartodbpositron")
 
-# Wilayah ENSO di Pasifik Tengah
-enso_area = folium.Rectangle(
-    bounds=[[5, -170], [-5, -120]],
-    color="red",
-    fill=True,
-    fill_opacity=0.2,
-    tooltip="Zona ENSO (El Niño/La Niña)"
-).add_to(m)
+    # Area Nino 3.4 (5N–5S, 170W–120W)
+    bounds = [[5, -170], [-5, -120]]  # lat, lon
+    folium.Rectangle(
+        bounds=bounds,
+        color='blue',
+        fill=True,
+        fill_opacity=0.4,
+        tooltip="Zona Nino 3.4 (5°N–5°S, 170°W–120°W)"
+    ).add_to(m)
 
-# Wilayah IOD di Samudra Hindia
-iod_area = folium.Rectangle(
-    bounds=[[-10, 50], [10, 100]],
-    color="blue",
-    fill=True,
-    fill_opacity=0.2,
-    tooltip="Zona IOD (Indian Ocean Dipole)"
-).add_to(m)
+    # Lokasi pengamatan IOD (Samudra Hindia)
+    folium.Marker(
+        location=[0, 75],
+        tooltip="Samudra Hindia (IOD)",
+        icon=folium.Icon(color="green", icon="info-sign")
+    ).add_to(m)
 
-# Lokasi Indonesia (titik fokus)
-folium.Marker(
-    location=[-2, 118],
-    tooltip="Indonesia",
-    icon=folium.Icon(color="green")
-).add_to(m)
+    # Garis khatulistiwa
+    folium.PolyLine(
+        locations=[[0, -180], [0, 180]],
+        color="black",
+        weight=1,
+        tooltip="Khatulistiwa"
+    ).add_to(m)
 
-st_folium(m, width=1000, height=450)
+    st_folium(m, height=450, width=750)
 
-st.info("📌 Wilayah berwarna menunjukkan zona aktif ENSO dan IOD yang memengaruhi cuaca di Indonesia.")
+with col2:
+    st.markdown("### 📘 Penjelasan Mudah Dipahami")
+    st.markdown("""
+    #### 🔄 El Niño & La Niña
+    - **Nino 3.4** adalah wilayah pemantauan utama suhu laut di Pasifik.
+    - Suhu di atas normal → **El Niño** → kering di Indonesia.
+    - Suhu di bawah normal → **La Niña** → hujan meningkat.
+
+    #### 🌊 IOD (Indian Ocean Dipole)
+    - Suhu laut barat Indonesia < atau > Samudra Hindia barat.
+    - **Positif** → kering, **Negatif** → basah.
+
+    #### 🌐 MJO
+    - Gangguan awan bergerak dari barat ke timur.
+    - Jika aktif di wilayah Indonesia → hujan meningkat.
+
+    🌍 Semua fenomena ini saling memengaruhi dan berperan besar terhadap musim & cuaca kita.
+    """)
+    st.caption("📡 Disusun oleh Ferri Kusuma (STMKG) untuk edukasi masyarakat umum.")
