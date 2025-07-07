@@ -1,11 +1,13 @@
+# File: Home.py
+
 import streamlit as st
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
-import pandas as pd
-import plotly.express as px
-from streamlit_folium import st_folium
 import folium
+import streamlit.components.v1 as components
+import plotly.express as px
+import pandas as pd
 
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
@@ -17,33 +19,33 @@ with col1:
     st.markdown("### 🏩 Masukkan Nama Kota")
     st.markdown("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
 
-    if 'kota' not in st.session_state:
-        st.session_state.kota = "Malang"
-
+    kota_input = st.text_input(" ", "Malang").strip().title()
     geolocator = Nominatim(user_agent="geoapi")
 
-    # Deteksi klik peta
-    default_center = [-2.5, 118.0]  # tengah Indonesia
-    m = folium.Map(location=default_center, zoom_start=5)
-    folium.LatLngPopup().add_to(m)
-    output = st_folium(m, height=300, width=700, returned_objects=["last_clicked"])
+    if 'clicked_latlon' not in st.session_state:
+        st.session_state.clicked_latlon = None
 
-    if output["last_clicked"] is not None:
-        lat_click = output["last_clicked"]["lat"]
-        lon_click = output["last_clicked"]["lng"]
+    kota = kota_input
+    location = None
+
+    # Geocoding berdasarkan nama kota
+    if kota_input:
         try:
-            loc = geolocator.reverse((lat_click, lon_click), timeout=10)
-            kota_dari_klik = loc.raw.get("address", {}).get("city", None) or loc.raw.get("address", {}).get("town", None)
-            if kota_dari_klik:
-                st.session_state.kota = kota_dari_klik.title()
-        except GeocoderTimedOut:
-            pass
+            location = geolocator.geocode(kota_input)
+        except:
+            location = None
+            st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Silakan lanjut dengan input manual.")
 
-    # Input manual
-    kota = st.text_input(" ", st.session_state.kota).strip().title()
-    st.session_state.kota = kota
-
-    location = geolocator.geocode(kota) if kota else None
+    # Reverse geocoding dari klik peta
+    elif st.session_state.clicked_latlon:
+        lat_click, lon_click = st.session_state.clicked_latlon
+        try:
+            location = geolocator.reverse((lat_click, lon_click), timeout=10)
+            kota = location.raw.get('address', {}).get('city', 'Tidak Dikenali')
+        except:
+            location = None
+            kota = "Tidak Dikenali"
+            st.warning("🌐 Deteksi lokasi gagal. Silakan ketik nama kota secara manual.")
 
     if kota:
         st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
@@ -51,25 +53,14 @@ with col1:
     if location:
         lat, lon = location.latitude, location.longitude
 
-        # Peta dinamis berdasarkan lokasi kota
+        st.markdown("### 🗌 Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
+
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
         folium.Circle(radius=400000, location=[lat, lon], color="cyan", fill=True, fill_opacity=0.05).add_to(m)
-        st_folium(m, height=350, width=700)
+        map_html = m._repr_html_()
+        components.html(map_html, height=350, width=700)
 
-        # Informasi tambahan lokasi
-        reverse_loc = geolocator.reverse((lat, lon), language='id')
-        address = reverse_loc.raw.get("address", {})
-        provinsi = address.get("state", "Tidak Diketahui")
-        negara = address.get("country", "Tidak Diketahui")
-
-        st.markdown("### 🧭 Informasi Lokasi Lengkap")
-        st.markdown(f"- 🏙️ **Provinsi:** `{provinsi}`")
-        st.markdown(f"- 🗺️ **Negara:** `{negara}`")
-        st.markdown(f"- 📍 **Koordinat:** `{lat:.3f}, {lon:.3f}`")
-        st.markdown(f"- 🔗 [Lihat di Google Maps](https://www.google.com/maps?q={lat},{lon})")
-
-        # Indeks atmosfer
         st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
         enso_index, iod_index = -0.7, -0.4
         enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
@@ -77,7 +68,6 @@ with col1:
         st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
         st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
 
-        # Durasi
         st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
         skala_durasi = {
             "MJO Fase 4": ("2025-07-01", "2025-07-10"),
@@ -90,7 +80,6 @@ with col1:
             selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
             st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} s.d. {selesai_fmt}*")
 
-        # Grafik timeline
         st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
         df_durasi = [
             {"Skala": nama, "Mulai": datetime.strptime(start, "%Y-%m-%d"), "Selesai": datetime.strptime(end, "%Y-%m-%d")}
@@ -123,7 +112,7 @@ with col1:
         else:
             st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
     else:
-        st.warning("Silakan masukkan nama kota atau klik lokasi pada peta.")
+        st.warning("⚠️ Data lokasi belum tersedia. Silakan isi nama kota atau klik lokasi di peta.")
 
 with col2:
     st.markdown("### 📘 Penjelasan Skala Atmosfer")
