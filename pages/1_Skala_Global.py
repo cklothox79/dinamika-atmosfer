@@ -5,7 +5,17 @@ import importlib
 
 st.set_page_config(page_title="🌏 Skala Global", layout="wide")
 st.title("🌏 Skala Global")
-st.markdown("Silakan pilih visualisasi di bawah:")
+st.markdown("<h1 style='color:#009999; font-weight:700'>🌏 Skala Global</h1>", unsafe_allow_html=True)
+st.markdown("<p style='font-size:17px'>Silakan pilih salah satu visualisasi interaktif:</p>", unsafe_allow_html=True)
+
+opsi = st.radio("📌", [
+    "Visualisasi Nino 3.4",
+    "ENSO Index Interaktif",
+    "IOD Index Interaktif",
+    "MJO Index Interaktif",
+    "OLR Anomali Interaktif"
+], label_visibility="collapsed")
+
 
 opsi = st.radio("📌 Pilih visualisasi global", [
     "Visualisasi Nino 3.4",
