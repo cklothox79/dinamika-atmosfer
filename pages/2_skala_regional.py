@@ -1,13 +1,13 @@
-# pages/2_skala_regional.py
+# File: pages/2_skala_regional.py
 
 import streamlit as st
 import importlib
 
 st.set_page_config(page_title="🌐 Skala Regional", layout="wide")
-st.title("🌐 Skala Regional")
+st.title(":globe_with_meridians: Skala Regional")
 st.markdown("Silakan pilih visualisasi fenomena skala regional:")
 
-opsi = st.radio("📌 Pilih visualisasi regional", [
+opsi = st.radio("\ud83d\udccc Pilih visualisasi regional", [
     "MJO Index Interaktif",
     "Gelombang Kelvin Interaktif",
     "Gelombang Rossby Interaktif",
