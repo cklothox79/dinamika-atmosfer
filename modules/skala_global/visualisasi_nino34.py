@@ -1,12 +1,14 @@
+# File: modules/skala_global/visualisasi_nino34.py
+
 import streamlit as st
 
 def app():
     st.title("📍 Visualisasi Area Nino 3.4")
 
     st.markdown("""
-    **Area Nino 3.4** adalah zona penting di Samudra Pasifik Tropis  
-    (antara 5°LU–5°LS dan 170°BB–120°BB) yang digunakan untuk memantau  
-    gangguan suhu laut seperti **El Niño** dan **La Niña**.
+    **Area Nino 3.4** adalah zona penting di Samudra Pasifik Tropis, tepatnya di antara garis lintang **5°LU–5°LS** dan garis bujur **170°BB–120°BB**.
+
+    Wilayah ini digunakan sebagai acuan utama dalam mendeteksi fenomena **El Niño** dan **La Niña**, karena perubahan suhu permukaan laut di area ini sangat memengaruhi dinamika atmosfer global.
     """)
 
     st.image(
@@ -16,7 +18,10 @@ def app():
     )
 
     st.markdown("""
-    - **El Niño**: pemanasan suhu laut di area Nino 3.4.  
-    - **La Niña**: pendinginan suhu laut di area tersebut.  
-    - Pemantauan biasanya melalui **ENSO Index** seperti ONI (Oceanic Niño Index).
+    ### 🌊 Apa yang Terjadi?
+
+    - **El Niño** terjadi ketika suhu laut di area ini **lebih hangat dari normal** selama beberapa bulan.
+    - **La Niña** terjadi ketika suhu laut di area ini **lebih dingin dari normal**.
+    - Kedua fenomena ini dipantau menggunakan **ENSO Index** seperti **ONI (Oceanic Niño Index)**.
+
     """)
