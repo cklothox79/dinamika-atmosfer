@@ -1,26 +1,19 @@
+# File: modules/skala_global/visualisasi_nino34.py
+
 import streamlit as st
 
 def app():
-    st.title("📍 Visualisasi Area Niño 3.4")
+    st.title("📍 Visualisasi Area Nino 3.4")
 
     st.markdown("""
-    **Area Niño 3.4** berada di Samudra Pasifik Tropis  
-    (5°LU–5°LS; 170°BB–120°BB). Gambar di bawah menandai area tersebut  
-    dengan kotak putih pada peta SST (Sea Surface Temperature).
+    **Area Nino 3.4** adalah zona penting di Samudra Pasifik Tropis (antara 5°LU–5°LS dan 170°BB–120°BB)  
+    yang digunakan untuk memantau gangguan suhu laut seperti **El Niño** dan **La Niña**.
     """)
 
-    st.image(
-        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_vs_la_nina.png",  # tambahkan gambar kotak jika sudah di-upload
-        caption="🌊 Zonasi Niño 3.4 pada peta SST",
-        use_container_width=True
-    )
+    st.image("media/el_nino_map.png", caption="Lokasi Area Nino 3.4 di Samudra Pasifik", use_column_width=True)
 
     st.markdown("""
-    ### 🎯 Intisari:
-
-    - **El Niño**: suhu laut lebih hangat → potensi cuaca kering.
-    - **La Niña**: suhu laut lebih dingin → potensi cuaca basah.
-    - Area ini dipantau menggunakan **ENSO Index** seperti Oceanic Niño Index (ONI).
+    - **El Niño**: Pemanasan suhu laut di area Nino 3.4 → potensi kekeringan di Indonesia.
+    - **La Niña**: Pendinginan suhu laut di area tersebut → potensi curah hujan tinggi.
+    - Pemantauan dilakukan menggunakan **ENSO Index** seperti **ONI (Oceanic Niño Index)**.
     """)
-
-    st.info("Kotak putih menunjukkan lokasi Niño 3.4. Warna mewakili suhu permukaan laut anomali.")
