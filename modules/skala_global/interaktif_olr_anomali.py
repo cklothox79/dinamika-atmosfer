@@ -1,43 +1,43 @@
-# File: pages/skala_global/5_Interaktif_OLR_Anomali.py
+# modules/skala_global/interaktif_olr_anomali.py
 
 import streamlit as st
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="OLR Anomali", layout="wide")
-st.title("☁️ Interaktif OLR Anomali")
+def app():
+    st.title("🌧️ OLR Anomali Interaktif")
+    st.markdown("""
+    **OLR (Outgoing Longwave Radiation)** merupakan pancaran gelombang panjang dari permukaan bumi dan awan ke luar angkasa.  
+    Nilai OLR rendah → **tutupan awan tebal**, potensi hujan tinggi.  
+    Nilai OLR tinggi → **cuaca cerah**, langit bersih dari awan konvektif.
 
-st.markdown("""
-Anomali OLR (Outgoing Longwave Radiation) adalah selisih antara nilai pancaran radiasi gelombang panjang sebenarnya
-dengan nilai normalnya. Nilai ini digunakan untuk mengamati aktivitas konveksi (awan dan hujan) di wilayah tropis.
+    Di bawah ini adalah visualisasi anomali OLR 30 hari terakhir berdasarkan data simulasi:
+    """)
 
-- **OLR negatif** → banyak awan tinggi dan kemungkinan hujan.
-- **OLR positif** → langit cerah, sedikit awan tinggi.
+    # Simulasi data OLR anomali
+    tanggal = [datetime(2025, 6, 10) + timedelta(days=i) for i in range(30)]
+    olr_anomali = [5, 3, 0, -3, -8, -12, -15, -18, -10, -5,
+                   -2, 1, 4, 7, 10, 12, 8, 5, 2, -2,
+                   -5, -10, -13, -17, -12, -8, -4, 0, 4, 6]
 
-Data OLR sangat penting untuk analisis dinamika atmosfer global, termasuk mendeteksi MJO, Kelvin Wave, dan siklus hujan tropis.
-""")
+    df = pd.DataFrame({
+        "Tanggal": tanggal,
+        "Anomali OLR (W/m²)": olr_anomali
+    })
 
-st.info("📌 Simulasi ini menampilkan data OLR anomali bulanan secara interaktif.")
+    fig = px.line(df, x="Tanggal", y="Anomali OLR (W/m²)", markers=True,
+                  title="📉 Anomali OLR 30 Hari Terakhir",
+                  labels={"Anomali OLR (W/m²)": "Anomali OLR (W/m²)"},
+                  color_discrete_sequence=["orange"])
 
-# Simulasi data
-bulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
-data = {
-    "Bulan": bulan,
-    "Anomali OLR (W/m²)": [-5, -3, 0, 2, 4, -2, -6, -3, 1, 3, 2, -1]
-}
-df = pd.DataFrame(data)
+    fig.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig.update_layout(
+        height=400,
+        plot_bgcolor="#f9f9f9",
+        yaxis=dict(title="Anomali OLR (W/m²)", zeroline=True)
+    )
 
-fig = px.bar(df, x="Bulan", y="Anomali OLR (W/m²)", color="Anomali OLR (W/m²)",
-             color_continuous_scale="RdBu_r",
-             title="Anomali OLR Bulanan (simulasi)")
-fig.update_layout(
-    xaxis_title="Bulan",
-    yaxis_title="Anomali OLR (W/m²)",
-    height=400,
-    margin=dict(l=10, r=10, t=40, b=10),
-    plot_bgcolor="#f0f2f6"
-)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.plotly_chart(fig, use_container_width=True)
-
-st.caption("📊 Data simulasi. Untuk implementasi penuh dapat terhubung ke NOAA atau BMKG.")
+    st.caption("📌 Nilai negatif = awan banyak (potensi hujan). Positif = cuaca cerah.")
