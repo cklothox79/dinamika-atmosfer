@@ -1,38 +1,42 @@
-# File: pages/skala_global/3_Interaktif_IOD_Index.py
+# modules/skala_global/interaktif_iod_index.py
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
-st.set_page_config(page_title="IOD Index", layout="wide")
-st.title("🌊 Interaktif IOD Index")
+def app():
+    st.title("🌊 IOD Index Interaktif")
+    st.markdown("""
+    **Indian Ocean Dipole (IOD)** menggambarkan perbedaan suhu laut antara Samudra Hindia bagian barat dan timur.  
+    - **IOD Positif** → Indonesia lebih kering  
+    - **IOD Negatif** → Indonesia lebih basah  
+    - **IOD Netral** → Tidak terlalu berpengaruh
+    
+    Berikut adalah data simulasi indeks IOD selama 12 bulan terakhir.
+    """)
 
-st.markdown("""
-IOD (Indian Ocean Dipole) Index mengukur anomali suhu permukaan laut antara barat dan timur Samudra Hindia.
-- IOD Positif → Timur lebih dingin → **Musim kering di Indonesia**
-- IOD Negatif → Timur lebih hangat → **Musim hujan di Indonesia**
-- IOD Netral → Tidak dominan
+    # Contoh data IOD (simulasi)
+    data = {
+        "Bulan": pd.date_range("2024-07-01", periods=12, freq="MS"),
+        "IOD": [-0.4, -0.5, -0.6, -0.3, -0.1, 0.2, 0.5, 0.8, 0.6, 0.3, 0.0, -0.2]
+    }
+    df = pd.DataFrame(data)
 
-""")
+    # Visualisasi
+    fig = px.line(df, x="Bulan", y="IOD", markers=True,
+                  title="📈 IOD Index Bulanan",
+                  labels={"IOD": "Nilai IOD", "Bulan": "Bulan"})
+    
+    fig.update_layout(
+        yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor='gray'),
+        shapes=[
+            dict(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=0.4, y1=2,
+                 fillcolor="red", opacity=0.1, layer="below", line_width=0),
+            dict(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=-2, y1=-0.4,
+                 fillcolor="blue", opacity=0.1, layer="below", line_width=0)
+        ]
+    )
 
-# Simulasi data IOD index
-data = {
-    "Tanggal": pd.date_range(start="2025-01-01", periods=12, freq="M"),
-    "IOD_Index": [0.0, -0.3, -0.5, -0.7, -0.6, -0.2, 0.3, 0.6, 0.9, 0.5, 0.1, -0.1]
-}
-df_iod = pd.DataFrame(data)
-df_iod["Kategori"] = df_iod["IOD_Index"].apply(
-    lambda x: "Positif" if x >= 0.4 else "Negatif" if x <= -0.4 else "Netral"
-)
+    st.plotly_chart(fig, use_container_width=True)
 
-fig = px.line(df_iod, x="Tanggal", y="IOD_Index", color="Kategori", markers=True,
-              title="Grafik IOD Index per Bulan",
-              labels={"IOD_Index": "Nilai IOD", "Tanggal": "Waktu"})
-
-fig.add_hline(y=0.4, line_dash="dash", line_color="red")
-fig.add_hline(y=-0.4, line_dash="dash", line_color="blue")
-
-st.plotly_chart(fig, use_container_width=True)
-
-st.caption("📊 Data disimulasikan untuk kebutuhan edukasi. Nantinya bisa dihubungkan ke BMKG atau JAMSTEC.")
+    st.caption("📌 Data disimulasikan. Data asli dapat diakses melalui Bureau of Meteorology Australia.")
