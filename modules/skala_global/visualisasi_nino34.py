@@ -3,25 +3,23 @@
 import streamlit as st
 
 def app():
-    st.title("📍 Visualisasi Area Nino 3.4")
+    st.title("📍 Visualisasi Area Niño 3.4")
 
     st.markdown("""
-    **Area Nino 3.4** adalah zona penting di Samudra Pasifik Tropis, tepatnya di antara garis lintang **5°LU–5°LS** dan garis bujur **170°BB–120°BB**.
-
-    Wilayah ini digunakan sebagai acuan utama dalam mendeteksi fenomena **El Niño** dan **La Niña**, karena perubahan suhu permukaan laut di area ini sangat memengaruhi dinamika atmosfer global.
+    Area **Niño 3.4** berada di Samudra Pasifik tropis (5°LU–5°LS, 120°BB–170°BB).  
+    Gambar di bawah memperlihatkan kotak yang menandai area tersebut, lengkap dengan animasi SST untuk El Niño dan La Niña.
     """)
 
     st.image(
-        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_vs_la_nina.png",
-        caption="Perbandingan El Niño dan La Niña",
+        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/nino34_box.png",
+        caption="🍃 SST Anomali dan kotak Niño 3.4",
         use_container_width=True
     )
 
     st.markdown("""
-    ### 🌊 Apa yang Terjadi?
-
-    - **El Niño** terjadi ketika suhu laut di area ini **lebih hangat dari normal** selama beberapa bulan.
-    - **La Niña** terjadi ketika suhu laut di area ini **lebih dingin dari normal**.
-    - Kedua fenomena ini dipantau menggunakan **ENSO Index** seperti **ONI (Oceanic Niño Index)**.
-
+    - Kotak putih menunjukkan **zona Niño 3.4**.
+    - Warna **merah/oranye**: suhu laut di atas rata-rata (El Niño).
+    - Warna **biru**: suhu laut lebih dingin (La Niña).
     """)
+
+    st.info("Animasi bergerak SST tersedia di versi lengkap, ini untuk ilustrasi awal.")
