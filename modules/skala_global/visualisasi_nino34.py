@@ -10,10 +10,15 @@ def app():
     yang digunakan untuk memantau gangguan suhu laut seperti **El Niño** dan **La Niña**.
     """)
 
-    st.image("media/el_nino_map.png", caption="Lokasi Area Nino 3.4 di Samudra Pasifik", use_column_width=True)
+    # Gambar langsung dari GitHub raw
+    st.image(
+        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_map.png",
+        caption="Area Nino 3.4 di Samudra Pasifik",
+        use_column_width=True
+    )
 
     st.markdown("""
-    - **El Niño**: Pemanasan suhu laut di area Nino 3.4 → potensi kekeringan di Indonesia.
-    - **La Niña**: Pendinginan suhu laut di area tersebut → potensi curah hujan tinggi.
-    - Pemantauan dilakukan menggunakan **ENSO Index** seperti **ONI (Oceanic Niño Index)**.
+    - **El Niño**: pemanasan suhu laut di area Nino 3.4.  
+    - **La Niña**: pendinginan suhu laut di area tersebut.  
+    - Pemantauan dilakukan melalui **ENSO Index** seperti **ONI (Oceanic Niño Index)**.
     """)
