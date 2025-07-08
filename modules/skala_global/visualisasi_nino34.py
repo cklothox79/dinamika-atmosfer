@@ -1,4 +1,4 @@
-# modules/skala_global/visualisasi_nino34.py
+# File: modules/skala_global/visualisasi_nino34.py
 
 import streamlit as st
 
@@ -11,7 +11,7 @@ def app():
     """)
 
     st.image(
-        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_vs_lanina.png",
+        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_vs_la_nina.png",
         caption="Perbandingan El Niño dan La Niña",
         use_container_width=True
     )
