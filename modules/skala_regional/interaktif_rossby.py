@@ -1,33 +1,23 @@
-# File: pages/2_skala_regional/2_Visualisasi_BBLJ.py
+# modules/skala_regional/interaktif_rossby.py
 
 import streamlit as st
-import folium
-from streamlit_folium import st_folium
-from datetime import datetime
 
-st.set_page_config(page_title="Visualisasi BBLJ", layout="wide")
-st.title("💨 Belokan Angin Lapisan Bawah (BBLJ)")
+def app():
+    st.title("🌊 Visualisasi Gelombang Rossby (BBLJ)")
 
-st.markdown("""
-BBLJ (Belokan Angin Lapisan Bawah) adalah fenomena atmosfer regional yang terjadi akibat perbedaan tekanan dan topografi,
-menyebabkan angin berbelok dan menciptakan zona konvergensi yang sering memicu hujan lokal.
+    st.markdown("""
+    **Gelombang Rossby** atau **Back-Building Longwave Jet (BBLJ)** adalah gelombang atmosfer yang bergerak ke barat
+    dan berperan dalam pola konveksi di wilayah tropis.
 
-🗓️ **Tanggal Pengamatan**: {today}
-""".format(today=datetime.today().strftime("%d %B %Y")))
+    Ciri-ciri:
+    - Bergerak lambat dan besar skalanya.
+    - Dapat memperkuat atau mengganggu sistem cuaca di Indonesia.
+    - Terpantau melalui anomali angin dan OLR.
 
-# Perkiraan posisi BBLJ aktif (simulasi/dummy)
-bblj_area = folium.Map(location=[-3.5, 120], zoom_start=5, tiles="cartodbpositron")
-folium.Circle(location=[-3.5, 120], radius=300000, color="blue",
-              fill=True, fill_opacity=0.3, tooltip="Zona Potensi BBLJ Aktif").add_to(bblj_area)
-folium.Marker([-3.5, 120], popup="Wilayah terdampak BBLJ", icon=folium.Icon(color="blue")).add_to(bblj_area)
+    Di bawah ini contoh wilayah dan waktu dominasi gelombang Rossby:
 
-st.markdown("### 🗺️ Peta Zona Potensial BBLJ")
-st_data = st_folium(bblj_area, width=700, height=500)
-
-st.markdown("### ℹ️ Penjelasan Tambahan")
-st.markdown("""
-BBLJ umumnya diamati melalui data vektor angin lapisan rendah (925–850 hPa) dan muncul saat ada perlambatan angin
-akibat tekanan lokal/topografi. Terutama berdampak di wilayah pesisir atau lembah pegunungan.
-""")
-
-st.caption("📌 Peta berbasis simulasi. Visualisasi lanjutan akan terhubung dengan dataset angin GFS/ERA5 di pembaruan mendatang.")
+    """)
+    
+    st.image("https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/gelombang_rossby_zona.png",
+             caption="Contoh lokasi dominasi Gelombang Rossby di kawasan maritim Indonesia.",
+             use_column_width=True)
