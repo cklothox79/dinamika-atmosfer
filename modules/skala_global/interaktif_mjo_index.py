@@ -1,42 +1,46 @@
-# File: pages/skala_global/4_Interaktif_MJO_Index.py
+# modules/skala_global/interaktif_mjo_index.py
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
-st.set_page_config(page_title="MJO Index", layout="wide")
-st.title("☁️ Interaktif MJO Index")
+def app():
+    st.title("🌐 MJO Index Interaktif")
+    st.markdown("""
+    **Madden–Julian Oscillation (MJO)** adalah gelombang konvektif tropis yang bergerak dari barat ke timur,  
+    membawa awan dan hujan di sepanjang khatulistiwa, dan berdampak besar pada pola hujan di Indonesia.
 
-st.markdown("""
-Madden-Julian Oscillation (MJO) adalah gangguan atmosfer tropis yang bergerak dari barat ke timur. Aktivitas MJO memengaruhi pola hujan dan konveksi di Indonesia.
-- Fase 4–6 → MJO aktif di wilayah Indonesia
-- Nilai indeks mendekati pusat lingkaran → MJO lemah atau tidak aktif
+    - **Fase 1–2** → MJO aktif di Afrika
+    - **Fase 3–4** → Samudra Hindia barat
+    - **Fase 5–6** → Indonesia & sekitarnya
+    - **Fase 7–8** → Samudra Pasifik
 
-Berikut ini adalah simulasi indeks MJO untuk beberapa waktu ke belakang:
-""")
+    Berikut adalah data simulasi indeks MJO 30 hari terakhir:
+    """)
 
-# Simulasi data MJO
-tanggal = pd.date_range(start="2025-01-01", periods=15, freq="7D")
-data = {
-    "Tanggal": tanggal,
-    "Fase": [3, 4, 5, 6, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4],
-    "Amplitude": [0.5, 1.2, 1.6, 1.8, 1.7, 1.4, 1.1, 0.8, 0.6, 0.4, 0.3, 0.7, 1.1, 1.5, 1.8]
-}
-df_mjo = pd.DataFrame(data)
+    # Data simulasi MJO
+    tgl = pd.date_range("2025-06-10", periods=30, freq='D')
+    fase = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 4, 5, 6, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8]
+    amplitudo = [0.3, 0.5, 0.8, 1.0, 1.3, 1.4, 1.2, 1.1, 0.9, 0.8, 0.6, 0.7, 0.8, 1.0, 1.3, 1.4, 1.2, 1.1, 1.3, 1.5, 1.4, 1.2, 1.1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]
 
-fig = px.scatter_polar(
-    df_mjo,
-    r="Amplitude",
-    theta="Fase",
-    color="Tanggal",
-    title="Diagram Polar MJO Index",
-    color_discrete_sequence=px.colors.sequential.Plasma_r,
-    range_r=[0, 2.5],
-    direction="clockwise",
-    start_angle=90
-)
+    df = pd.DataFrame({
+        "Tanggal": tgl,
+        "Fase": fase,
+        "Amplitudo": amplitudo
+    })
 
-st.plotly_chart(fig, use_container_width=True)
+    fig = px.scatter(df, x="Fase", y="Amplitudo", color="Tanggal",
+                     size="Amplitudo", hover_data=["Tanggal"],
+                     title="📈 MJO Index – 30 Hari Terakhir",
+                     labels={"Fase": "Fase MJO", "Amplitudo": "Kuatnya MJO"})
 
-st.caption("🌐 Sumber data: simulasi. Untuk implementasi nyata bisa disambungkan ke data BMKG atau CPC NOAA.")
+    fig.update_layout(
+        xaxis=dict(dtick=1, range=[0.5, 8.5]),
+        yaxis=dict(range=[0, 2]),
+        coloraxis_showscale=False,
+        plot_bgcolor="#fafafa"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.caption("📌 Data simulasi. MJO fase 4–6 menunjukkan potensi hujan meningkat di Indonesia.")
