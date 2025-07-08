@@ -1,4 +1,4 @@
-# modules/skala_global/visualisasi_nino34.py
+# File: modules/skala_global/visualisasi_nino34.py
 
 import streamlit as st
 
@@ -12,15 +12,13 @@ def app():
     """)
 
     st.image(
-        "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/media/el_nino_vs_la_nina.png",
+        "https://raw.githubusercontent.com/hadichat/storage/main/elnino_lanina_comparison.png",
         caption="Perbandingan El Niño dan La Niña",
         use_container_width=True
     )
 
     st.markdown("""
-    - **El Niño**: Pemanasan suhu laut di area Nino 3.4 → berdampak pada musim kemarau lebih panjang.
-    - **La Niña**: Pendinginan suhu laut di area Nino 3.4 → berpotensi meningkatkan curah hujan di Indonesia.
-    - Pemantauan biasanya menggunakan **ENSO Index** seperti ONI (Oceanic Niño Index).
+    - **El Niño**: pemanasan suhu laut di area Nino 3.4.
+    - **La Niña**: pendinginan suhu laut di area tersebut.
+    - Pemantauan biasanya melalui **ENSO Index** seperti ONI (Oceanic Niño Index).
     """)
-
-    st.info("🔍 Gambar menunjukkan lokasi area Nino 3.4 dan pola perbedaan suhu laut saat El Niño dan La Niña.")
