@@ -1,14 +1,36 @@
 # File: pages/1_Skala_Global.py
 
 import streamlit as st
+import importlib
 
-st.set_page_config(page_title="Skala Global", layout="wide")
+st.set_page_config(page_title="🌏 Skala Global", layout="wide")
 st.title("🌏 Skala Global")
 st.markdown("Silakan pilih visualisasi di bawah:")
 
-# Tautan ke halaman di luar folder pages/
-st.page_link("modules/skala_global/1_Visualisasi_Nino34.py", label="📍 Visualisasi Nino 3.4", icon="🌊")
-st.page_link("modules/skala_global/2_Interaktif_ENSO_Index.py", label="📈 Interaktif ENSO Index")
-st.page_link("modules/skala_global/3_Interaktif_IOD_Index.py", label="📈 Interaktif IOD Index")
-st.page_link("modules/skala_global/4_Interaktif_MJO_Index.py", label="📈 Interaktif MJO Index")
-st.page_link("modules/skala_global/5_Interaktif_OLR_Anomali.py", label="🌤️ Interaktif OLR Anomali")
+opsi = st.radio("📌 Pilih visualisasi global", [
+    "Visualisasi Nino 3.4",
+    "ENSO Index Interaktif",
+    "IOD Index Interaktif",
+    "MJO Index Interaktif",
+    "OLR Anomali Interaktif"
+])
+
+if opsi == "Visualisasi Nino 3.4":
+    modul = importlib.import_module("modules.skala_global.visualisasi_nino34")
+    modul.app()
+
+elif opsi == "ENSO Index Interaktif":
+    modul = importlib.import_module("modules.skala_global.interaktif_enso_index")
+    modul.app()
+
+elif opsi == "IOD Index Interaktif":
+    modul = importlib.import_module("modules.skala_global.interaktif_iod_index")
+    modul.app()
+
+elif opsi == "MJO Index Interaktif":
+    modul = importlib.import_module("modules.skala_global.interaktif_mjo_index")
+    modul.app()
+
+elif opsi == "OLR Anomali Interaktif":
+    modul = importlib.import_module("modules.skala_global.interaktif_olr_anomali")
+    modul.app()
