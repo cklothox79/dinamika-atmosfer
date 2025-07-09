@@ -1,4 +1,4 @@
-# File: Home.py
+# File: Home.py (Versi dengan Tampilan Lebih Menarik)
 
 import streamlit as st
 from datetime import datetime
@@ -7,63 +7,69 @@ import streamlit.components.v1 as components
 import plotly.express as px
 import pandas as pd
 
+# Konfigurasi halaman
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
-st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
-st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
-col1, col2 = st.columns([1.5, 1.0])
+# ===== Header =====
+st.markdown("""
+<div style='text-align: center; padding: 10px 0;'>
+    <h1 style='color: #0a58ca;'>🌀 <b>SKALA ATMOSFER AKTIF SAAT INI</b></h1>
+    <h5><i>Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)</i></h5>
+</div>
+""", unsafe_allow_html=True)
 
-# Data koordinat beberapa kota untuk fallback
+# === Inisialisasi lokasi ===
 latlon_dict = {
     "Malang": (-7.98, 112.63),
     "Surabaya": (-7.25, 112.75),
     "Sidoarjo": (-7.45, 112.70),
     "Jember": (-8.17, 113.70)
 }
+if 'clicked_latlon' not in st.session_state:
+    st.session_state.clicked_latlon = None
+
+# === Layout Utama ===
+col1, col2 = st.columns([1.5, 1.0])
 
 with col1:
-    st.markdown("### 🏩 Masukkan Nama Kota")
-    st.markdown("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
+    st.markdown("### 🏙️ Masukkan Nama Kota atau Klik Peta")
+    kota_input = st.text_input("", "Malang").strip().title()
 
-    kota_input = st.text_input(" ", "Malang").strip().title()
-
-    if 'clicked_latlon' not in st.session_state:
-        st.session_state.clicked_latlon = None
-
-    lokasi_dari_peta = False
     kota = kota_input
     lat, lon = None, None
+    lokasi_dari_peta = False
 
-    # Jika pengguna klik di peta (reverse geocoding manual)
     if st.session_state.clicked_latlon:
         lat, lon = st.session_state.clicked_latlon
         kota = "Lokasi Kustom"
         lokasi_dari_peta = True
-
-    # Jika tidak ada klik peta, ambil dari dict
     elif kota in latlon_dict:
         lat, lon = latlon_dict[kota]
     else:
-        st.warning("🌐 Kota tidak tersedia dalam database lokal. Silakan pilih dari: " + ", ".join(latlon_dict.keys()))
+        st.warning("🌐 Kota tidak tersedia. Pilih: " + ", ".join(latlon_dict.keys()))
 
-    st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
+    st.markdown(f"<h4>📍 Kota yang dipilih: <code>{kota}</code></h4>", unsafe_allow_html=True)
 
     if lat and lon:
-        st.markdown("### 🗌 Lokasi Kota di Peta")
+        # ==== PETA ====
+        st.markdown("### 🗺️ Lokasi di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
         folium.Circle(radius=400000, location=[lat, lon], color="cyan", fill=True, fill_opacity=0.05).add_to(m)
-        map_html = m._repr_html_()
-        components.html(map_html, height=350, width=700)
+        components.html(m._repr_html_(), height=350)
 
-        # Data nyata (dummy sementara → bisa diganti ke API real)
-        st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
-        enso_index, iod_index = -0.6, -0.5  # Contoh: La Niña dan IOD Negatif nyata
-        enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
-        iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
-        st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
-        st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
+        # ==== INFO GLOBAL ====
+        with st.container():
+            st.markdown("### 🌐 Indeks Atmosfer Global Saat Ini")
+            enso_index, iod_index = -0.6, -0.5
+            enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
+            iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
 
+            colg1, colg2 = st.columns(2)
+            colg1.metric(label="🌀 ENSO Index", value=f"{enso_index}", delta=enso_status)
+            colg2.metric(label="🌊 IOD Index", value=f"{iod_index}", delta=iod_status)
+
+        # ==== DURASI AKTIF ====
         st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
         skala_durasi = {
             "MJO Fase 4": ("2025-07-01", "2025-07-10"),
@@ -76,26 +82,25 @@ with col1:
             selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
             st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} s.d. {selesai_fmt}*")
 
-        st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
+        # ==== TIMELINE ====
+        st.markdown("### 📈 Grafik Timeline")
         df_durasi = [
             {"Skala": nama, "Mulai": datetime.strptime(start, "%Y-%m-%d"), "Selesai": datetime.strptime(end, "%Y-%m-%d")}
             for nama, (start, end) in skala_durasi.items()
         ]
         df = pd.DataFrame(df_durasi)
-        fig = px.timeline(df, x_start="Mulai", x_end="Selesai", y="Skala", color="Skala",
-                          title="📈 Grafik Timeline Skala Atmosfer")
+        fig = px.timeline(df, x_start="Mulai", x_end="Selesai", y="Skala", color="Skala")
         fig.update_yaxes(autorange="reversed")
         fig.update_layout(
             height=450,
             width=950,
             margin=dict(l=10, r=10, t=40, b=40),
-            xaxis_title="Tanggal",
-            yaxis_title="Skala Atmosfer",
-            plot_bgcolor="#f9f9f9"
+            plot_bgcolor="#f8f9fa"
         )
         st.plotly_chart(fig, use_container_width=False)
 
         st.divider()
+
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi or lokasi_dari_peta:
             st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
@@ -108,26 +113,34 @@ with col1:
         else:
             st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
     else:
-        st.warning("⚠️ Data lokasi belum tersedia. Silakan isi nama kota dari daftar atau klik lokasi di peta.")
+        st.warning("⚠️ Data lokasi belum tersedia. Silakan isi nama kota atau klik lokasi di peta.")
 
+# === Panel Penjelasan (Kolom Kanan) ===
 with col2:
     st.markdown("### 📘 Penjelasan Skala Atmosfer")
+
     st.markdown("#### 🌌 Skala Global")
-    st.markdown("""
-    - **El Niño / La Niña**: Gangguan suhu laut Pasifik, pengaruh besar terhadap musim hujan Indonesia.
-    - **IOD**: Anomali suhu Samudra Hindia. Positif = kering, Negatif = basah.
-    - **MJO**: Gangguan konvektif bergerak ke timur, memicu hujan fase tertentu.
-    """)
+    with st.expander("🔍 Penjelasan"):
+        st.markdown("""
+        - **El Niño / La Niña**: Gangguan suhu laut Pasifik → pengaruh besar terhadap musim hujan.
+        - **IOD**: Anomali suhu Samudra Hindia. Positif = kering, Negatif = basah.
+        - **MJO**: Gangguan konvektif bergerak ke timur → memicu hujan fase tertentu.
+        """)
+
     st.markdown("#### 🌍 Skala Regional")
-    st.markdown("""
-    - **Gelombang Kelvin**: Gelombang tropis memicu hujan sore-malam.
-    - **BBLJ**: Belokan angin di lapisan rendah, penyebab konvergensi.
-    - **ITCZ**: Zona pertemuan angin tropis, pemicu hujan lebat.
-    """)
+    with st.expander("🔍 Penjelasan"):
+        st.markdown("""
+        - **Gelombang Kelvin**: Gelombang tropis → memicu hujan sore–malam.
+        - **BBLJ**: Belokan angin lapisan rendah → konvergensi hujan.
+        - **ITCZ**: Zona pertemuan angin tropis → hujan lebat.
+        """)
+
     st.markdown("#### 🧽 Skala Lokal")
-    st.markdown("""
-    - **Angin Lembah–Gunung**: Pola harian, memicu awan orografis.
-    - **Konvergensi Mikro**: Perbedaan suhu mikro, efek pemanasan lokal.
-    - **Efek Urban**: Kota panas memicu awan konvektif & hujan petir.
-    """)
-    st.caption("📚 Panel informasi tetap. Cocok untuk edukasi publik & siswa cuaca.")
+    with st.expander("🔍 Penjelasan"):
+        st.markdown("""
+        - **Angin Lembah–Gunung**: Pola harian → awan orografis.
+        - **Konvergensi Mikro**: Efek suhu mikro → awan lokal.
+        - **Efek Urban**: Pemanasan kota → konvektif & hujan petir.
+        """)
+
+    st.caption("📚 Panel edukatif untuk publik dan siswa meteorologi.")
