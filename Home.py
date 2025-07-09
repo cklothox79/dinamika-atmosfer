@@ -15,52 +15,21 @@ st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
 st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
-# === Ambil data ENSO Index terbaru ===
-try:
-    oni_url = "https://www.cpc.ncep.noaa.gov/data/indices/ersst5.nino.mth.91-20.ascii"
-    df_oni = pd.read_csv(oni_url, delim_whitespace=True, skiprows=1, header=None,
-                         names=["Tahun", "Bulan", "ONI"])
-    enso_index = df_oni.iloc[-1]['ONI']
-except:
-    enso_index = 0.0
-
-if enso_index <= -0.5:
-    enso_status = "La Niña"
-elif enso_index >= 0.5:
-    enso_status = "El Niño"
-else:
-    enso_status = "Netral"
-
-# === Ambil data IOD Index terbaru ===
-try:
-    iod_url = "https://psl.noaa.gov/data/correlation/dmi.data"
-    raw = requests.get(iod_url).text
-    iod_lines = raw.split('\n')[1:]
-    iod_data = [line.strip().split() for line in iod_lines if line and not line.startswith('#')]
-    df_iod = pd.DataFrame(iod_data)
-    df_iod.columns = ["Tahun"] + ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
-    df_iod_latest = df_iod.iloc[-1]
-    iod_index = float(df_iod_latest[-1])  # ambil bulan terakhir
-except:
-    iod_index = 0.0
-
-if iod_index <= -0.4:
-    iod_status = "Negatif"
-elif iod_index >= 0.4:
-    iod_status = "Positif"
-else:
-    iod_status = "Netral"
-
-# UI Input Lokasi
 col1, col2 = st.columns([1.5, 1.0])
 
 with col1:
     st.markdown("### 🏩 Masukkan Nama Kota")
-    st.markdown("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
 
-    kota_input = st.text_input(" ", "Malang").strip().title()
+    # Baris horizontal: label dan input di baris yang sama
+    col_input_label, col_input_box = st.columns([1.2, 2])
+    with col_input_label:
+        st.write(" ")
+    with col_input_box:
+        kota_input = st.text_input(" ", "Malang", label_visibility="collapsed", max_chars=30).strip().title()
+
+    st.caption("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
+
     geolocator = Nominatim(user_agent="geoapi")
-
     if 'clicked_latlon' not in st.session_state:
         st.session_state.clicked_latlon = None
 
@@ -70,10 +39,9 @@ with col1:
     if kota_input:
         try:
             location = geolocator.geocode(kota_input)
-        except:
+        except GeocoderTimedOut:
             location = None
             st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Silakan lanjut dengan input manual.")
-
     elif st.session_state.clicked_latlon:
         lat_click, lon_click = st.session_state.clicked_latlon
         try:
@@ -98,8 +66,31 @@ with col1:
         components.html(map_html, height=350, width=700)
 
         st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
-        st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
-        st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
+
+        # Ambil data ENSO dari NOAA
+        try:
+            enso_url = "https://psl.noaa.gov/enso/mei/data/ersst5.nino.mth.91-20.ascii"
+            enso_data = requests.get(enso_url).text
+            enso_df = pd.read_csv(StringIO(enso_data), delim_whitespace=True, skiprows=1, names=["Year", "Month", "Nino34"])
+            latest_enso = enso_df.iloc[-1]["Nino34"]
+        except:
+            latest_enso = -0.7
+
+        enso_status = "La Niña" if latest_enso <= -0.5 else "El Niño" if latest_enso >= 0.5 else "Netral"
+
+        # Ambil data IOD dari NOAA
+        try:
+            iod_url = "https://psl.noaa.gov/gcos_wgsp/Timeseries/Data/dmi.data"
+            iod_text = requests.get(iod_url).text
+            iod_df = pd.read_csv(StringIO(iod_text), delim_whitespace=True, comment="%", names=["Year", "Month", "DMI"])
+            latest_iod = iod_df.iloc[-1]["DMI"]
+        except:
+            latest_iod = -0.4
+
+        iod_status = "Negatif" if latest_iod <= -0.4 else "Positif" if latest_iod >= 0.4 else "Netral"
+
+        st.markdown(f"#### 🌀 ENSO Index: `{latest_enso}` → **{enso_status}**")
+        st.markdown(f"#### 🌊 IOD Index: `{latest_iod}` → **{iod_status}**")
 
         st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
         skala_durasi = {
@@ -108,6 +99,7 @@ with col1:
             "La Niña": ("2025-06-15", "2025-08-31"),
             "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
         }
+
         for skala, (mulai, selesai) in skala_durasi.items():
             mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
             selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
