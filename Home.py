@@ -28,29 +28,15 @@ with col1:
     kota = kota_input
     location = None
 
-    # Fallback koordinat jika geolokasi gagal
-    fallback_coords = {
-        "Malang": (-7.9797, 112.6304),
-        "Surabaya": (-7.2575, 112.7521),
-        "Sidoarjo": (-7.4478, 112.7181),
-        "Jember": (-8.1724, 113.6995)
-    }
-
+    # Geocoding berdasarkan nama kota
     if kota_input:
         try:
-            location = geolocator.geocode(kota_input, timeout=10)
-            if location is None and kota in fallback_coords:
-                st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Menggunakan data manual.")
-                lat, lon = fallback_coords[kota]
-                location = type("obj", (object,), {"latitude": lat, "longitude": lon})()
+            location = geolocator.geocode(kota_input)
         except:
-            if kota in fallback_coords:
-                st.warning("🌐 Geolokasi gagal. Menggunakan data manual.")
-                lat, lon = fallback_coords[kota]
-                location = type("obj", (object,), {"latitude": lat, "longitude": lon})()
-            else:
-                st.error("❌ Lokasi tidak ditemukan dan tidak tersedia fallback.")
-                location = None
+            location = None
+            st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Silakan lanjut dengan input manual.")
+
+    # Reverse geocoding dari klik peta
     elif st.session_state.clicked_latlon:
         lat_click, lon_click = st.session_state.clicked_latlon
         try:
@@ -74,25 +60,51 @@ with col1:
         map_html = m._repr_html_()
         components.html(map_html, height=350, width=700)
 
+        # -------------------- SKALA GLOBAL DATA REAL --------------------
         st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
-        enso_index, iod_index = -0.7, -0.4
-        enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
-        iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
-        st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
-        st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
 
+        # Data aktual per Juli 2025
+        enso_index = -0.1   # ONI April–Juni 2025 (CPC/NOAA)
+        iod_index = -0.12   # DMI per 22 Juni 2025 (BOM/NOAA)
+
+        def interpret_enso(val):
+            return "La Niña" if val <= -0.5 else "El Niño" if val >= 0.5 else "Netral"
+
+        def interpret_iod(val):
+            return "Negatif" if val <= -0.4 else "Positif" if val >= 0.4 else "Netral"
+
+        st.markdown(f"#### 🌀 ENSO Index (ONI Apr–Jun): `{enso_index}` → **{interpret_enso(enso_index)}**")
+        st.markdown(f"#### 🌊 IOD Index (22 Juni): `{iod_index}` → **{interpret_iod(iod_index)}**")
+
+        st.markdown("### ⚡ MJO dan OLR Saat Ini")
+
+        mjo_fase = "Fase 4"
+        mjo_aktif = True
+        olr_anomali = "Negatif di wilayah Indonesia (↑ konveksi)"
+
+        if mjo_aktif:
+            st.success(f"☄️ **MJO Aktif:** {mjo_fase}")
+        else:
+            st.info("☄️ MJO Tidak Aktif")
+
+        st.markdown(f"☁️ **OLR Anomali:** {olr_anomali}")
+
+        st.caption("📊 Sumber: NOAA CPC, BOM, IRI Columbia")
+
+        # -------------------- DURASI SKALA ATMOSFER --------------------
         st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
         skala_durasi = {
             "MJO Fase 4": ("2025-07-01", "2025-07-10"),
-            "IOD Negatif": ("2025-06-20", "2025-08-15"),
-            "La Niña": ("2025-06-15", "2025-08-31"),
-            "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
+            "IOD Netral": ("2025-06-20", "2025-08-15"),
+            "ENSO Netral": ("2025-06-01", "2025-09-01"),
+            "Kelvin Wave": ("2025-07-05", "2025-07-08"),
         }
         for skala, (mulai, selesai) in skala_durasi.items():
             mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
             selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
             st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} s.d. {selesai_fmt}*")
 
+        # -------------------- GRAFIK TIMELINE --------------------
         st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
         df_durasi = [
             {"Skala": nama, "Mulai": datetime.strptime(start, "%Y-%m-%d"), "Selesai": datetime.strptime(end, "%Y-%m-%d")}
@@ -112,15 +124,16 @@ with col1:
         )
         st.plotly_chart(fig, use_container_width=False)
 
+        # -------------------- WILAYAH TERPENGARUH --------------------
         st.divider()
         wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
         if kota in wilayah_dipengaruhi:
             st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
             st.markdown("""
-            - 🌐 **MJO aktif fase 4**
-            - 🌊 **IOD negatif**
-            - 💧 **La Niña ringan**
-            - 🌬️ **Kelvin Wave**
+            - ☄️ **MJO fase 4 aktif**
+            - ☁️ **OLR negatif (peningkatan konveksi)**
+            - 🌊 **IOD Netral**
+            - 🌀 **ENSO Netral**
             """)
         else:
             st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
