@@ -2,45 +2,61 @@ import streamlit as st
 import requests
 import pandas as pd
 from io import StringIO
-import folium
-from streamlit_folium import st_folium
+from geopy.geocoders import Nominatim
+import plotly.graph_objects as go
+from datetime import datetime
 
 st.set_page_config(page_title="Dinamika Atmosfer", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
-# ========================
-# Fungsi Ambil Data ENSO
-# ========================
+# =======================
+# Input Nama Kota
+# =======================
+st.subheader("📍 Masukkan Nama Kota")
+location_name = st.text_input("Contoh: Malang, Bandung, Jakarta")
+
+lat, lon = None, None
+if location_name:
+    try:
+        geolocator = Nominatim(user_agent="dinamika-atmosfer")
+        location = geolocator.geocode(location_name)
+        if location:
+            lat, lon = location.latitude, location.longitude
+            st.success(f"{location.address} | Koordinat: {lat:.3f}, {lon:.3f}")
+        else:
+            st.error("❌ Lokasi tidak ditemukan.")
+    except:
+        st.error("❌ Gagal mengakses layanan geocoding.")
+
+# =======================
+# Fetch ENSO
+# =======================
 def fetch_enso_data():
     url = "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.txt"
     try:
         response = requests.get(url)
         response.raise_for_status()
-        raw_text = response.text
-        lines = raw_text.strip().split('\n')[1:]  # Skip header
+        raw = response.text
+        lines = raw.strip().split('\n')[1:]
         df = pd.read_csv(StringIO('\n'.join(lines)), delim_whitespace=True)
         last_row = df.iloc[-1]
-        latest_season = last_row['SEAS']
-        latest_oni = last_row.iloc[-1]
+        season = last_row['SEAS']
+        oni = last_row.iloc[-1]
 
-        if latest_oni >= 0.5:
+        if oni >= 0.5:
             phase = "El Niño"
-        elif latest_oni <= -0.5:
+        elif oni <= -0.5:
             phase = "La Niña"
         else:
             phase = "Netral"
 
-        return {
-            "season": latest_season,
-            "oni": latest_oni,
-            "phase": phase
-        }
-    except Exception:
+        return {"oni": oni, "season": season, "phase": phase}
+    except:
         return None
 
-# ========================
-# Fungsi Ambil Data IOD
-# ========================
+# =======================
+# Fetch IOD
+# =======================
 def fetch_iod_data():
     url = "https://www.bom.gov.au/climate/enso/indices/archive/iod.txt"
     try:
@@ -51,85 +67,110 @@ def fetch_iod_data():
         data_lines = [line for line in lines if line and line[0].isdigit()]
         df = pd.read_csv(StringIO('\n'.join(data_lines)), delim_whitespace=True)
         last_row = df.iloc[-1]
-        latest_month = f"{int(last_row['Year'])}-{int(last_row['Month']):02d}"
-        latest_iod = last_row['IOD']
+        iod = last_row['IOD']
+        date = f"{int(last_row['Year'])}-{int(last_row['Month']):02d}"
 
-        if latest_iod >= 0.4:
+        if iod >= 0.4:
             phase = "IOD Positif"
-        elif latest_iod <= -0.4:
+        elif iod <= -0.4:
             phase = "IOD Negatif"
         else:
             phase = "IOD Netral"
 
-        return {
-            "date": latest_month,
-            "iod": latest_iod,
-            "phase": phase
-        }
-    except Exception:
+        return {"iod": iod, "date": date, "phase": phase}
+    except:
         return None
 
-# ================================
-# Fungsi Dummy Identifikasi Skala
-# ================================
-def identifikasi_skala(lat, lon):
-    # Nanti bisa diganti dengan logika deteksi nyata
-    return {
-        "ENSO": "El Niño (lemah)",
-        "IOD": "Netral",
-        "MJO": "Aktif (fase 3-4)",
-        "Gelombang Kelvin": "Tidak Aktif",
-        "Gelombang Rossby": "Aktif (fase timur)"
-    }
-
-# =============================
-# PILIH LOKASI DENGAN PETA
-# =============================
-st.subheader("🗺️ Pilih Lokasi di Peta")
-
-default_location = [-2.5, 117.0]  # Tengah Indonesia
-m = folium.Map(location=default_location, zoom_start=5)
-m.add_child(folium.LatLngPopup())  # Aktifkan klik untuk dapat latlon
-map_data = st_folium(m, height=400, width=700)
-
-clicked_latlon = None
-if map_data.get("last_clicked"):
-    lat = map_data["last_clicked"]["lat"]
-    lon = map_data["last_clicked"]["lng"]
-    clicked_latlon = (lat, lon)
-    st.success(f"📍 Lokasi terpilih: {lat:.3f}, {lon:.3f}")
-
-# =============================
-# TAMPILKAN DATA REAL-TIME ENSO & IOD
-# =============================
+# =======================
+# Tampilkan ENSO & IOD
+# =======================
 st.subheader("🌊 Status Global: ENSO & IOD (Real-Time)")
 
+col1, col2 = st.columns(2)
 enso = fetch_enso_data()
 iod = fetch_iod_data()
 
-col1, col2 = st.columns(2)
-
 with col1:
     if enso:
-        st.metric(label="ENSO (ONI)", value=f"{enso['oni']:.2f}", delta=enso["phase"])
+        st.metric("ENSO (ONI)", f"{enso['oni']:.2f}", delta=enso["phase"])
         st.caption(f"Musim: {enso['season']}")
     else:
         st.error("❌ Gagal memuat data ENSO.")
 
 with col2:
     if iod:
-        st.metric(label="IOD Index", value=f"{iod['iod']:.2f}", delta=iod["phase"])
+        st.metric("IOD Index", f"{iod['iod']:.2f}", delta=iod["phase"])
         st.caption(f"Bulan: {iod['date']}")
     else:
         st.error("❌ Gagal memuat data IOD.")
 
-# =============================
-# IDENTIFIKASI SKALA ATMOSFER
-# =============================
-if clicked_latlon:
-    st.subheader("🔍 Skala Atmosfer yang Aktif di Lokasi Ini")
-    hasil = identifikasi_skala(lat, lon)
-    for skala, status in hasil.items():
-        st.write(f"- **{skala}**: {status}")
-else:
-    st.info("Klik lokasi di peta untuk melihat skala atmosfer yang aktif.")
+# =======================
+# Deteksi Skala Atmosfer
+# =======================
+if lat and lon:
+    st.markdown("---")
+    st.subheader(f"📡 Skala Atmosfer yang Aktif di Sekitar **{location_name.title()}**")
+
+    aktif = {
+        "ENSO": enso["phase"] if enso else "Tidak Terdeteksi",
+        "IOD": iod["phase"] if iod else "Tidak Terdeteksi",
+        "MJO": "Aktif (fase 3-4)",  # Placeholder sementara
+    }
+
+    signifikan = [s for s in aktif.values() if "Netral" not in s and "Tidak" not in s]
+
+    if signifikan:
+        for skala, status in aktif.items():
+            st.write(f"- **{skala}**: {status}")
+    else:
+        st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
+
+# =======================
+# Timeline Dummy
+# =======================
+if lat and lon:
+    st.subheader("📅 Timeline Indeks Skala Atmosfer (Simulasi)")
+
+    dates = pd.date_range(end=datetime.today(), periods=12, freq='M')
+    dummy_enso = [0.4, 0.6, 0.8, 1.0, 0.7, 0.5, 0.2, -0.1, -0.3, -0.5, -0.4, -0.2]
+    dummy_iod = [0.1, 0.3, 0.5, 0.6, 0.4, 0.1, -0.1, -0.3, -0.5, -0.2, 0.0, 0.2]
+    dummy_mjo = [1, 2, 3, 5, 6, 4, 3, 2, 1, 0, 0, 1]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=dates, y=dummy_enso, name="ENSO (ONI)"))
+    fig.add_trace(go.Scatter(x=dates, y=dummy_iod, name="IOD Index"))
+    fig.add_trace(go.Scatter(x=dates, y=dummy_mjo, name="Fase MJO", yaxis="y2"))
+
+    fig.update_layout(
+        title="Timeline Skala Atmosfer 12 Bulan Terakhir (Contoh)",
+        xaxis_title="Bulan",
+        yaxis=dict(title="ENSO / IOD"),
+        yaxis2=dict(title="MJO Fase", overlaying="y", side="right"),
+        legend=dict(orientation="h", y=-0.3),
+        height=400
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# =======================
+# Mode Edukasi Interaktif
+# =======================
+with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)"):
+    st.markdown("""
+    ### 🌀 ENSO (El Niño–Southern Oscillation)
+    - **El Niño**: Pemanasan suhu laut Pasifik timur dan tengah → mengurangi hujan di Indonesia.
+    - **La Niña**: Pendinginan suhu laut Pasifik → meningkatkan hujan di Indonesia.
+    
+    ### 🌊 IOD (Indian Ocean Dipole)
+    - **IOD Positif**: Samudra Hindia barat lebih hangat → musim kemarau lebih kering.
+    - **IOD Negatif**: Samudra Hindia timur lebih hangat → hujan meningkat di wilayah barat Indonesia.
+
+    ### ☁️ MJO (Madden-Julian Oscillation)
+    - Gelombang konveksi tropis yang berpindah dari barat ke timur.
+    - Memengaruhi hujan 1–2 minggu ke depan tergantung fase dan lokasi.
+
+    ### 🌐 Gelombang Kelvin dan Rossby
+    - Gelombang atmosfer tropis yang berperan dalam pola tekanan, angin, dan hujan.
+    """)
+    st.image("https://www.bom.gov.au/climate/enso/history/enso-animation.gif",
+             caption="Animasi ENSO - Sumber: BOM Australia", use_column_width=True)
