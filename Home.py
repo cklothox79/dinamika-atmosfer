@@ -3,11 +3,12 @@
 import streamlit as st
 from datetime import datetime
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
 import folium
 import streamlit.components.v1 as components
 import plotly.express as px
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
@@ -15,105 +16,144 @@ st.markdown("**Editor: Ferri Kusuma (STMKG/M8TB_14.22.0003)**")
 
 col1, col2 = st.columns([1.5, 1.0])
 
+# =====================
+# 📍 INPUT KOTA & PETA
+# =====================
 with col1:
-    # Kembali ke tampilan input seperti semula
     st.markdown("### 🏩 Masukkan Nama Kota")
     st.markdown("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
 
-    kota_input = st.text_input("Masukkan nama kota", "Malang").strip().title()
+    kota_input = st.text_input("Nama Kota", "Malang").strip().title()
     geolocator = Nominatim(user_agent="geoapi")
+    kota = kota_input
+    location = None
 
     if 'clicked_latlon' not in st.session_state:
         st.session_state.clicked_latlon = None
 
-    kota = kota_input
-    location = None
-
-    # Geocoding berdasarkan nama kota
     if kota_input:
         try:
             location = geolocator.geocode(kota_input)
         except:
-            location = None
-            st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Silakan lanjut dengan input manual.")
+            st.warning("🌐 Tidak dapat mengakses layanan geolokasi.")
 
-    # Reverse geocoding dari klik peta
     elif st.session_state.clicked_latlon:
         lat_click, lon_click = st.session_state.clicked_latlon
         try:
             location = geolocator.reverse((lat_click, lon_click), timeout=10)
             kota = location.raw.get('address', {}).get('city', 'Tidak Dikenali')
         except:
-            location = None
-            kota = "Tidak Dikenali"
-            st.warning("🌐 Deteksi lokasi gagal. Silakan ketik nama kota secara manual.")
+            st.warning("🌐 Deteksi lokasi gagal.")
 
     if kota:
         st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
 
     if location:
         lat, lon = location.latitude, location.longitude
-
-        st.markdown("### 🗌 Lokasi Kota di Peta")
+        st.markdown("### 🗺️ Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
         folium.Circle(radius=400000, location=[lat, lon], color="cyan", fill=True, fill_opacity=0.05).add_to(m)
-        map_html = m._repr_html_()
-        components.html(map_html, height=350, width=700)
+        components.html(m._repr_html_(), height=360, width=700)
 
-        st.markdown("### 🌐 Indeks Atmosfer Global Saat Ini")
-        enso_index, iod_index = -0.7, -0.4  # Ganti dengan data real jika tersedia
-        enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
-        iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
-        st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
-        st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
+# ==============================
+# 🌍 DATA ENSO & IOD REAL-TIME
+# ==============================
+    def get_enso_index():
+        try:
+            url = "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php"
+            r = requests.get(url, timeout=10)
+            soup = BeautifulSoup(r.text, "html.parser")
+            text = soup.get_text()
+            lines = text.splitlines()
+            for line in lines[::-1]:
+                if "202" in line and "-9" not in line:
+                    nilai = line.strip().split()[-1]
+                    return float(nilai)
+        except:
+            return None
 
-        st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
-        skala_durasi = {
-            "MJO Fase 4": ("2025-07-01", "2025-07-10"),
-            "IOD Negatif": ("2025-06-20", "2025-08-15"),
-            "La Niña": ("2025-06-15", "2025-08-31"),
-            "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
-        }
-        for skala, (mulai, selesai) in skala_durasi.items():
-            mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
-            selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
-            st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} s.d. {selesai_fmt}*")
+    def get_iod_index():
+        try:
+            url = "https://www.bom.gov.au/climate/enso/"
+            r = requests.get(url, timeout=10)
+            soup = BeautifulSoup(r.text, "html.parser")
+            text = soup.get_text()
+            for line in text.splitlines():
+                if "Latest IOD index value" in line:
+                    for word in line.split():
+                        try:
+                            return float(word)
+                        except:
+                            continue
+        except:
+            return None
 
-        st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
-        df_durasi = [
-            {"Skala": nama, "Mulai": datetime.strptime(start, "%Y-%m-%d"), "Selesai": datetime.strptime(end, "%Y-%m-%d")}
-            for nama, (start, end) in skala_durasi.items()
-        ]
-        df = pd.DataFrame(df_durasi)
-        fig = px.timeline(df, x_start="Mulai", x_end="Selesai", y="Skala", color="Skala",
-                          title="📈 Grafik Timeline Skala Atmosfer")
-        fig.update_yaxes(autorange="reversed")
-        fig.update_layout(
-            height=450,
-            width=950,
-            margin=dict(l=10, r=10, t=40, b=40),
-            xaxis_title="Tanggal",
-            yaxis_title="Skala Atmosfer",
-            plot_bgcolor="#f9f9f9"
-        )
-        st.plotly_chart(fig, use_container_width=False)
+    enso_index = get_enso_index()
+    iod_index = get_iod_index()
 
-        st.divider()
-        wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
-        if kota in wilayah_dipengaruhi:
-            st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
-            st.markdown("""
-            - 🌐 **MJO aktif fase 4**
-            - 🌊 **IOD negatif**
-            - 💧 **La Niña ringan**
-            - 🌬️ **Kelvin Wave**
-            """)
-        else:
-            st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
+    enso_status = "La Niña" if enso_index is not None and enso_index <= -0.5 else "El Niño" if enso_index and enso_index >= 0.5 else "Netral"
+    iod_status = "Negatif" if iod_index is not None and iod_index <= -0.4 else "Positif" if iod_index and iod_index >= 0.4 else "Netral"
+
+    st.markdown("### 🌐 Indeks Atmosfer Global Saat Ini")
+    if enso_index is not None:
+        st.markdown(f"🌊 **ENSO Index:** `{enso_index}` → **{enso_status}**")
     else:
-        st.warning("⚠️ Data lokasi belum tersedia. Silakan isi nama kota atau klik lokasi di peta.")
+        st.warning("Gagal memuat data ENSO.")
 
+    if iod_index is not None:
+        st.markdown(f"🌊 **IOD Index:** `{iod_index}` → **{iod_status}**")
+    else:
+        st.warning("Gagal memuat data IOD.")
+
+# ===================================
+# ⏱️ DURASI AKTIF SKALA ATMOSFER
+# ===================================
+    st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
+    skala_durasi = {
+        "MJO Fase 4": ("2025-07-01", "2025-07-10"),
+        "IOD " + iod_status: ("2025-06-20", "2025-08-15"),
+        "ENSO " + enso_status: ("2025-06-15", "2025-08-31"),
+        "Gelombang Kelvin": ("2025-07-05", "2025-07-08"),
+    }
+    for skala, (mulai, selesai) in skala_durasi.items():
+        mulai_fmt = datetime.strptime(mulai, "%Y-%m-%d").strftime("%d %B %Y")
+        selesai_fmt = datetime.strptime(selesai, "%Y-%m-%d").strftime("%d %B %Y")
+        st.markdown(f"- ⏳ **{skala}** → *{mulai_fmt} s.d. {selesai_fmt}*")
+
+# =======================
+# 📈 GRAFIK TIMELINE
+# =======================
+    st.markdown("### 📈 Grafik Timeline Skala Atmosfer")
+    df_durasi = [
+        {"Skala": nama, "Mulai": datetime.strptime(start, "%Y-%m-%d"), "Selesai": datetime.strptime(end, "%Y-%m-%d")}
+        for nama, (start, end) in skala_durasi.items()
+    ]
+    df = pd.DataFrame(df_durasi)
+    fig = px.timeline(df, x_start="Mulai", x_end="Selesai", y="Skala", color="Skala", title="📈 Timeline Aktivitas Skala Atmosfer")
+    fig.update_yaxes(autorange="reversed")
+    fig.update_layout(height=450, width=950, margin=dict(l=10, r=10, t=40, b=40))
+    st.plotly_chart(fig, use_container_width=False)
+
+# =====================
+# ✅ DETEKSI PENGARUH
+# =====================
+    st.divider()
+    wilayah_dipengaruhi = ["Malang", "Surabaya", "Sidoarjo", "Jember"]
+    if kota in wilayah_dipengaruhi:
+        st.success("✅ Wilayah ini sedang dipengaruhi oleh:")
+        st.markdown(f"""
+        - 🌐 **MJO aktif fase 4**
+        - 🌊 **IOD {iod_status}**
+        - 🌊 **ENSO {enso_status}**
+        - 🌬️ **Kelvin Wave**
+        """)
+    else:
+        st.info("ℹ️ Tidak ada skala atmosfer signifikan yang terdeteksi saat ini.")
+
+# =====================
+# 📘 PANEL PENJELASAN
+# =====================
 with col2:
     st.markdown("### 📘 Penjelasan Skala Atmosfer")
     st.markdown("#### 🌌 Skala Global")
