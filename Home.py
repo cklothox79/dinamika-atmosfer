@@ -48,8 +48,30 @@ with col1:
 
         st.markdown("### 🗺️ Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
-        folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
+        folium.Marker(
+            [lat, lon],
+            tooltip=kota,
+            popup=folium.Popup("Lokasi yang Anda pilih akan dianalisis terhadap pengaruh skala atmosfer.", max_width=300),
+            icon=folium.Icon(color='blue')
+        ).add_to(m)
+
         folium.Circle(radius=400000, location=[lat, lon], color="cyan", fill=True, fill_opacity=0.05).add_to(m)
+
+        # Tambahkan tooltip edukatif: posisi Khatulistiwa dan zona MJO aktif
+        folium.Marker(
+            location=[0, 110],
+            icon=folium.DivIcon(html='<div style="font-size: 10pt; color: red;">🌍 Khatulistiwa</div>')
+        ).add_to(m)
+
+        folium.Circle(
+            location=[-5, 120],
+            radius=1000000,
+            color="orange",
+            fill=True,
+            fill_opacity=0.2,
+            tooltip="Perkiraan zona aktif MJO dan Gelombang Kelvin"
+        ).add_to(m)
+
         components.html(m._repr_html_(), height=350, width=700)
 
         # Ambil ENSO dari GitHub CSV
@@ -138,4 +160,3 @@ with col2:
     - **Efek Urban**: Kota panas memicu hujan lokal & petir.
     """)
     st.caption("📚 Cocok untuk edukasi publik & siswa cuaca.")
-
