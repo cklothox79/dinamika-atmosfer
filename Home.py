@@ -3,11 +3,11 @@
 import streamlit as st
 from datetime import datetime
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
 import folium
 import streamlit.components.v1 as components
 import plotly.express as px
 import pandas as pd
-import requests
 
 st.set_page_config(page_title="Skala Atmosfer Aktif", layout="wide")
 st.title("🌀 SKALA ATMOSFER AKTIF SAAT INI")
@@ -19,31 +19,35 @@ with col1:
     st.markdown("### 🏩 Masukkan Nama Kota")
     st.markdown("_Atau klik lokasi di peta untuk deteksi otomatis_ ✨")
 
-    kota_input = st.text_input(" ", "Malang").strip().title()
     geolocator = Nominatim(user_agent="geoapi")
 
+    # Inisialisasi sesi
     if 'clicked_latlon' not in st.session_state:
         st.session_state.clicked_latlon = None
 
+    # Input nama kota
+    kota_input = st.text_input("Masukkan nama kota", "Malang").strip().title()
     kota = kota_input
     location = None
 
+    # Geocoding dari input kota
     if kota_input:
         try:
             location = geolocator.geocode(kota_input)
+        except GeocoderTimedOut:
+            st.warning("🌐 Waktu akses habis. Silakan coba lagi.")
         except:
-            location = None
-            st.warning("🌐 Tidak dapat mengakses layanan geolokasi. Silakan lanjut dengan input manual.")
+            st.warning("🌐 Tidak dapat mengakses layanan geolokasi.")
 
+    # Reverse geocoding dari klik peta
     elif st.session_state.clicked_latlon:
         lat_click, lon_click = st.session_state.clicked_latlon
         try:
             location = geolocator.reverse((lat_click, lon_click), timeout=10)
             kota = location.raw.get('address', {}).get('city', 'Tidak Dikenali')
         except:
-            location = None
             kota = "Tidak Dikenali"
-            st.warning("🌐 Deteksi lokasi gagal. Silakan ketik nama kota secara manual.")
+            st.warning("🌐 Deteksi lokasi gagal.")
 
     if kota:
         st.markdown(f"📍 **Kota yang dipilih:** `{kota}`")
@@ -53,41 +57,35 @@ with col1:
 
         st.markdown("### 🗌 Lokasi Kota di Peta")
         m = folium.Map(location=[lat, lon], zoom_start=6)
-
         folium.Marker([lat, lon], tooltip=kota, icon=folium.Icon(color='blue')).add_to(m)
         folium.Circle(radius=400000, location=[lat, lon], color="cyan", fill=True, fill_opacity=0.05).add_to(m)
         map_html = m._repr_html_()
         components.html(map_html, height=350, width=700)
 
-        # Ambil ENSO index dari CSV NOAA
-        def ambil_enso_csv():
+        # ✅ Data ENSO real-time dari GitHub CSV
+        def ambil_enso_github():
             try:
-                url = "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.csv"
+                url = "https://raw.githubusercontent.com/ahuang11/oni/master/oni.csv"
                 df = pd.read_csv(url)
-                df.columns = ["Year"] + [f"{i:02}" for i in range(1, 13)]
-                latest_oni = df.iloc[-1, -1]  # Bulan terakhir di baris terakhir
-                return float(latest_oni)
+                return float(df.iloc[-1]["anom_c"])
             except:
                 return None
 
-        # Dummy untuk IOD (sementara)
         def ambil_iod_dummy():
-            return -0.4
+            return -0.4  # bisa diganti nanti dengan real-time
 
-        enso_index = ambil_enso_csv()
+        enso_index = ambil_enso_github()
         iod_index = ambil_iod_dummy()
 
+        st.markdown("### 🌍 Indeks Atmosfer Global Saat Ini")
         if enso_index is None:
             st.error("❌ Gagal memuat data ENSO.")
         else:
             enso_status = "La Niña" if enso_index <= -0.5 else "El Niño" if enso_index >= 0.5 else "Netral"
-            st.markdown(f"#### 🌀 ENSO Index: `{enso_index}` → **{enso_status}**")
+            st.markdown(f"#### 🌀 ENSO Index: `{enso_index:.2f}` → **{enso_status}**")
 
-        if iod_index is None:
-            st.error("❌ Gagal memuat data IOD.")
-        else:
-            iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
-            st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
+        iod_status = "Negatif" if iod_index <= -0.4 else "Positif" if iod_index >= 0.4 else "Netral"
+        st.markdown(f"#### 🌊 IOD Index: `{iod_index}` → **{iod_status}**")
 
         st.markdown("### ⏱️ Durasi Skala Atmosfer Aktif")
         skala_durasi = {
