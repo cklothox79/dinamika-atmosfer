@@ -84,6 +84,29 @@ else:
     st.warning("❌ Gagal memuat data IOD.")
 
 # ================================
+# Dampak Skala terhadap Kota
+# ================================
+if kota:
+    st.markdown("---")
+    st.markdown(f"### 📌 Dampak Skala Atmosfer terhadap Kota: `{kota}`")
+
+    # Dampak ENSO
+    if fase_enso == "El Niño":
+        st.markdown("🔴 **El Niño** dapat menyebabkan penurunan curah hujan di wilayah Indonesia, termasuk kota ini. Waspadai potensi kekeringan dan suhu lebih panas dari biasanya.")
+    elif fase_enso == "La Niña":
+        st.markdown("🔵 **La Niña** meningkatkan potensi curah hujan di sebagian besar wilayah Indonesia, termasuk kota ini. Hati-hati terhadap banjir dan tanah longsor.")
+    elif fase_enso == "Netral":
+        st.markdown("⚪ Saat ini kondisi **Netral** (tidak ada El Niño atau La Niña), tetapi potensi hujan masih dipengaruhi faktor lain seperti MJO dan lokalitas.")
+
+    # Dampak IOD
+    if fase_iod == "IOD Positif":
+        st.markdown("🟠 **IOD Positif** cenderung mengurangi pasokan uap air dari Samudra Hindia ke Indonesia bagian barat, termasuk kota ini. Cuaca cenderung lebih kering.")
+    elif fase_iod == "IOD Negatif":
+        st.markdown("🔵 **IOD Negatif** mendorong peningkatan curah hujan di wilayah barat dan selatan Indonesia. Kota ini bisa mengalami lebih banyak hari hujan.")
+    elif fase_iod == "Netral":
+        st.markdown("⚪ **IOD Netral**, tidak berdampak dominan saat ini, namun bisa dipengaruhi oleh faktor lain.")
+
+# ================================
 # Edukasi Skala Atmosfer
 # ================================
 with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)", expanded=True):
@@ -107,9 +130,3 @@ with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)", expanded=T
 # ================================
 st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
 st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif", use_container_width=True)
-
-# ================================
-# Catatan Lokasi (Opsional)
-# ================================
-if kota:
-    st.markdown(f"---\n📌 **Informasi ini ditujukan untuk kota: `{kota}`**\nSilakan jelajahi halaman lainnya untuk melihat pengaruh skala atmosfer terhadap kota ini.")
