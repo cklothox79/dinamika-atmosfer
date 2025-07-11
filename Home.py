@@ -69,6 +69,17 @@ def fetch_mjo():
         return "Tidak aktif"
 
 # =============================
+# Fungsi Placeholder Rossby dan ITCZ
+# =============================
+@st.cache_data
+def fetch_rossby():
+    return "Belum tersedia"
+
+@st.cache_data
+def fetch_itcz():
+    return "Belum tersedia"
+
+# =============================
 # Input Lokasi
 # =============================
 st.markdown("### 📍 Masukkan Nama Kota")
@@ -97,7 +108,7 @@ if kota:
             st.warning("❌ Gagal memuat data IOD.")
 
     # =============================
-    # Skala Regional: MJO (sementara)
+    # Skala Regional: MJO, Rossby, ITCZ
     # =============================
     with col2:
         st.subheader("🗺️ Skala Regional")
@@ -107,7 +118,11 @@ if kota:
         else:
             st.warning("⚠️ Gagal memuat data MJO.")
 
-        st.info("📡 Data Rossby dan ITCZ akan segera tersedia.")
+        rossby = fetch_rossby()
+        itcz = fetch_itcz()
+
+        st.info(f"🌐 Gelombang Rossby: {rossby}")
+        st.info(f"🌧️ Posisi ITCZ: {itcz}")
 
     # =============================
     # Skala Lokal
