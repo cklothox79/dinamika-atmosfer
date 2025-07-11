@@ -1,35 +1,39 @@
 import streamlit as st
 import requests
+import pandas as pd
 import re
 
 st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # ========================================
+# ✅ Real-Time ENSO dari PSL NOAA
 @st.cache_data
 def fetch_enso():
     try:
-        url = "https://ftp.cpc.ncep.noaa.gov/htdocs/data/indices/oni.ascii.txt"
+        url = "https://psl.noaa.gov/data/correlation/oni.data"
         r = requests.get(url, timeout=10)
         lines = r.text.strip().split('\n')
         data = []
         for line in lines:
-            parts = line.split()
-            if len(parts) == 3 and parts[0].isdigit():
-                year, month, val = int(parts[0]), int(parts[1]), float(parts[2])
-                data.append((year, month, val))
+            if line[:4].isdigit():
+                year = int(line[:4])
+                monthly_vals = [float(x) for x in line[5:].split()]
+                for i, val in enumerate(monthly_vals):
+                    data.append((year, i + 1, val))
         if not data:
             return None
-        _, _, oni_val = data[-1]
-        if oni_val >= 0.5:
+        _, _, latest_oni = data[-1]
+        if latest_oni >= 0.5:
             return "El Niño"
-        elif oni_val <= -0.5:
+        elif latest_oni <= -0.5:
             return "La Niña"
         else:
             return "Netral"
     except:
         return None
 
+# ✅ Real-Time IOD
 @st.cache_data
 def fetch_iod():
     try:
@@ -48,10 +52,12 @@ def fetch_iod():
     except:
         return None
 
+# ========================================
 # Input kota
 st.markdown("### 📍 Masukkan Nama Kota")
 kota = st.text_input("Contoh: Malang, Bandung, Jakarta", key="lokasi_input")
 
+# ========================================
 # Status Global
 st.markdown("### 🌊 Status Global: ENSO & IOD (Real‑Time)")
 fase_enso = fetch_enso()
@@ -67,7 +73,8 @@ if isinstance(fase_iod, str):
 else:
     st.warning("❌ Gagal memuat data IOD.")
 
-# Dampak per kota jika nama kota dimasukkan
+# ========================================
+# Dampak jika kota diisi
 if kota:
     st.markdown("---")
     st.markdown(f"### 📌 Dampak Skala Atmosfer terhadap Kota: `{kota}`")
@@ -84,9 +91,22 @@ if kota:
     else:
         st.markdown("⚪ IOD Netral — tidak berdampak signifikan saat ini.")
 
-# Edukasi dan animasi
+# ========================================
+# Edukasi dan Animasi
 with st.expander("🎓 Penjelasan Skala Atmosfer", expanded=True):
-    st.markdown("...")
+    st.markdown("### 🌀 ENSO (El Niño–Southern Oscillation)")
+    st.markdown("- **El Niño**: Pemanasan suhu laut Pasifik → kekeringan di Indonesia.")
+    st.markdown("- **La Niña**: Pendinginan suhu laut Pasifik → curah hujan meningkat.")
+
+    st.markdown("### 🌊 IOD (Indian Ocean Dipole)")
+    st.markdown("- **IOD Positif**: Samudra Hindia barat lebih hangat → Indonesia lebih kering.")
+    st.markdown("- **IOD Negatif**: Samudra Hindia timur lebih hangat → curah hujan meningkat.")
+
+    st.markdown("### ☁️ MJO (Madden-Julian Oscillation)")
+    st.markdown("- Gelombang konveksi tropis → memengaruhi hujan mingguan.")
+
+    st.markdown("### 🌐 Gelombang Kelvin dan Rossby")
+    st.markdown("- Gelombang atmosfer skala besar → memengaruhi tekanan & hujan.")
 
 st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
 st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif",
