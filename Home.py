@@ -108,6 +108,8 @@ with st.expander("🎓 Penjelasan Skala Atmosfer", expanded=True):
     st.markdown("### 🌐 Gelombang Kelvin dan Rossby")
     st.markdown("- Gelombang atmosfer skala besar → memengaruhi tekanan & hujan.")
 
-st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
-st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif",
-         use_container_width=True)
+st.image(
+    "https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif",
+    use_container_width=True,
+    caption="🌊 Animasi ENSO - Sumber: BOM Australia"
+)
