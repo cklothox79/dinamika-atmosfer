@@ -14,7 +14,9 @@ def fetch_enso():
     try:
         url = "https://raw.githubusercontent.com/hadiningrat29/dinamika-atmosfer-data/main/oni_realtime.csv"
         df = pd.read_csv(url)
-        last_val = df["anomalia"].iloc[-1]
+        if df.empty:
+            return "Netral"
+        last_val = df["anomalia"].dropna().iloc[-1]
         if last_val >= 0.5:
             return "El Niño"
         elif last_val <= -0.5:
@@ -22,7 +24,7 @@ def fetch_enso():
         else:
             return "Netral"
     except:
-        return None
+        return "Netral"
 
 # =============================
 # Fungsi Data IOD (web scraping BOM)
@@ -43,7 +45,7 @@ def fetch_iod():
         else:
             return "Netral"
     except:
-        return None
+        return "Netral"
 
 # =============================
 # Fungsi Data MJO
@@ -56,7 +58,7 @@ def fetch_mjo():
         lines = r.text.strip().split('\n')
         data = [line for line in lines if line and len(line.split()) >= 5]
         if not data:
-            return None
+            return "Tidak aktif"
         last = data[-1].split()
         phase = int(float(last[3]))
         amp = float(last[4])
@@ -64,7 +66,7 @@ def fetch_mjo():
             return "Tidak aktif"
         return f"Fase {phase}"
     except:
-        return None
+        return "Tidak aktif"
 
 # =============================
 # Input Lokasi
