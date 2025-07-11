@@ -7,10 +7,60 @@ st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide"
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # =============================
+# Fungsi Data IOD
+# =============================
+@st.cache_data
+def fetch_iod():
+    try:
+        url = "https://www.bom.gov.au/climate/iod/"
+        r = requests.get(url, timeout=10)
+        m = re.search(r"IOD index.*?([-]?\d+\.\d+)", r.text)
+        if not m:
+            return "Netral"
+        iod_val = float(m.group(1))
+        if iod_val >= 0.4:
+            return "IOD Positif"
+        elif iod_val <= -0.4:
+            return "IOD Negatif"
+        else:
+            return "Netral"
+    except:
+        return "Netral"
+
+# =============================
 # Fungsi Data ENSO (dari GitHub CSV)
 # =============================
 @st.cache_data
 def fetch_enso():
+    try:
+        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/oni_realtime.csv"
+        df = pd.read_csv(url)
+        last = df["anomalia"].dropna().iloc[-1]
+        if last >= 0.5:
+            return "El Niño"
+        elif last <= -0.5:
+            return "La Niña"
+        else:
+            return "Netral"
+    except:
+        return "Netral"
+
+# =============================
+# Fungsi Data MJO (placeholder)
+# =============================
+@st.cache_data
+def fetch_mjo():
+    return "Tidak aktif"
+
+# =============================
+# Fungsi Data Rossby & ITCZ
+# =============================
+@st.cache_data
+def fetch_rossby():
+    return "Belum tersedia"
+
+@st.cache_data
+def fetch_itcz():
     try:
         url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/itcz_position.csv"
         df = pd.read_csv(url)
