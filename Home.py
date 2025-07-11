@@ -1,36 +1,32 @@
 import streamlit as st
 import requests
+import re
 
 st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # ================================
-# Fungsi Ambil Data ENSO (ONI)
+# Ambil Data ENSO (ONI) via oni.ascii.txt dari NOAA
 # ================================
 @st.cache_data
 def fetch_enso():
     try:
-        url = "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.txt"
-        r = requests.get(url)
-        lines = r.text.strip().split('\n')[1:]
+        url = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
+        r = requests.get(url, timeout=10)
+        lines = r.text.strip().split('\n')
         data = []
         for line in lines:
             parts = line.split()
-            if len(parts) >= 13:
-                year = parts[0]
-                vals = parts[1:]
-                for idx, val in enumerate(vals):
-                    try:
-                        oni = float(val)
-                    except:
-                        continue
-                    # gunakan label bulan
-                    month_labels = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
-                    tri = month_labels[idx]
-                    data.append((int(year), tri, oni))
+            # format: YYYY MM ONI
+            if len(parts) == 3 and parts[0].isdigit():
+                try:
+                    year, month, val = int(parts[0]), int(parts[1]), float(parts[2])
+                except:
+                    continue
+                data.append((year, month, val))
         if not data:
             return None
-        year, tri, oni = data[-1]
+        y, m, oni = data[-1]
         if oni >= 0.5:
             return "El Niño"
         elif oni <= -0.5:
@@ -41,29 +37,19 @@ def fetch_enso():
         return None
 
 # ================================
-# Fungsi Ambil Data IOD
+# Ambil Data IOD dari halaman BOM Outlook
 # ================================
 @st.cache_data
 def fetch_iod():
     try:
-        url = "https://www.bom.gov.au/climate/enso/indices/archive/iod.txt"
-        r = requests.get(url)
-        lines = r.text.strip().split('\n')
-        data = []
-        for line in lines:
-            if line and line[0].isdigit():
-                parts = line.split()
-                if len(parts) >= 3:
-                    try:
-                        y = int(parts[0])
-                        m = int(parts[1])
-                        val = float(parts[2])
-                    except:
-                        continue
-                    data.append((y, m, val))
-        if not data:
-            return None
-        y, m, iod_val = data[-1]
+        url = "https://www.bom.gov.au/climate/iod/"
+        r = requests.get(url, timeout=10)
+        text = r.text
+        # cari pola seperti "IOD index ... −0.12 °C"
+        match = re.search(r"IOD index.*?([-]?\d+\.\d+)", text)
+        if not match:
+            return "Netral"
+        iod_val = float(match.group(1))
         if iod_val >= 0.4:
             return "IOD Positif"
         elif iod_val <= -0.4:
@@ -80,7 +66,7 @@ st.markdown("### 📍 Masukkan Nama Kota")
 kota = st.text_input("Contoh: Malang, Bandung, Jakarta", key="lokasi_input")
 
 # ================================
-# Status ENSO & IOD Real-Time
+# Status ENSO & IOD Real‑Time
 # ================================
 st.markdown("### 🌊 Status Global: ENSO & IOD (Real-Time)")
 
@@ -98,32 +84,44 @@ else:
     st.warning("❌ Gagal memuat data IOD.")
 
 # ================================
-# Edukasi Skala Atmosfer
+# Dampak Skala terhadap Kota
+# ================================
+if kota:
+    st.markdown("---")
+    st.markdown(f"### 📌 Dampak Skala Atmosfer terhadap Kota: `{kota}`")
+    # Dampak ENSO
+    if fase_enso == "El Niño":
+        st.markdown("🔴 **El Niño** dapat menurunkan curah hujan di Indonesia, termasuk kota ini. Waspadai kekeringan dan suhu tinggi.")
+    elif fase_enso == "La Niña":
+        st.markdown("🔵 **La Niña** meningkatkan potensi hujan tinggi dan risiko banjir.")
+    else:
+        st.markdown("⚪ **ENSO Netral**, faktor lain seperti MJO dominan mengatur hujan lokal.")
+    # Dampak IOD
+    if fase_iod == "IOD Positif":
+        st.markdown("🟠 **IOD Positif** cenderung menyebabkan cuaca lebih kering di wilayah barat Indonesia.")
+    elif fase_iod == "IOD Negatif":
+        st.markdown("🔵 **IOD Negatif** meningkatkan potensi hujan di barat dan selatan Indonesia.")
+    else:
+        st.markdown("⚪ **IOD Netral**, sementara tidak berdampak dominan.")
+
+# ================================
+# Penjelasan Skala Atmosfer
 # ================================
 with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)", expanded=True):
     st.markdown("### 🌀 ENSO (El Niño–Southern Oscillation)")
-    st.markdown("- **El Niño**: Pemanasan suhu laut Pasifik timur dan tengah → mengurangi hujan di Indonesia.")
-    st.markdown("- **La Niña**: Pendinginan suhu laut Pasifik → meningkatkan hujan di Indonesia.")
-
+    st.markdown("- El Niño: laut Pasifik timur-tengah lebih hangat → curah hujan turun.")
+    st.markdown("- La Niña: laut lebih dingin → curah hujan meningkat.")
     st.markdown("### 🌊 IOD (Indian Ocean Dipole)")
-    st.markdown("- **IOD Positif**: Samudra Hindia barat lebih hangat → musim kemarau lebih kering.")
-    st.markdown("- **IOD Negatif**: Samudra Hindia timur lebih hangat → hujan meningkat di wilayah barat Indonesia.")
-
-    st.markdown("### ☁️ MJO (Madden-Julian Oscillation)")
-    st.markdown("- Gelombang konveksi tropis yang berpindah dari barat ke timur.")
-    st.markdown("- Memengaruhi hujan 1–2 minggu ke depan tergantung fase dan lokasi.")
-
-    st.markdown("### 🌐 Gelombang Kelvin dan Rossby")
-    st.markdown("- Gelombang atmosfer tropis yang berperan dalam pola tekanan, angin, dan hujan.")
+    st.markdown("- IOD Positif: barat hangat → musim kering.")
+    st.markdown("- IOD Negatif: timur hangat → lebih banyak hujan.")
+    st.markdown("### ☁️ MJO")
+    st.markdown("- Gelombang konveksi tropis dengan pengaruh hujan 1–2 minggu ke depan.")
+    st.markdown("### 🌐 Gelombang Kelvin & Rossby")
+    st.markdown("- Gelombang atmosfer tropis yang memengaruhi tekanan, angin, dan hujan.")
 
 # ================================
 # Animasi ENSO (Opsional)
 # ================================
 st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
-st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif", use_container_width=True)
-
-# ================================
-# Catatan Lokasi (Opsional)
-# ================================
-if kota:
-    st.markdown(f"---\n📌 **Informasi ini ditujukan untuk kota: `{kota}`**\nSilakan jelajahi halaman lainnya untuk melihat pengaruh skala atmosfer terhadap kota ini.")
+st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif",
+         use_container_width=True)
