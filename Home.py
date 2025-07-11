@@ -1,31 +1,23 @@
 import streamlit as st
 import requests
 import re
+import pandas as pd
 
 st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # =============================
-# Fungsi Data ENSO
+# Fungsi Data ENSO (dari GitHub CSV)
 # =============================
 @st.cache_data
 def fetch_enso():
     try:
-        url = "https://ftp.cpc.ncep.noaa.gov/htdocs/data/indices/oni.ascii.txt"
-        r = requests.get(url, timeout=10)
-        lines = r.text.strip().split('\n')
-        data = []
-        for line in lines:
-            parts = line.split()
-            if len(parts) == 3 and parts[0].isdigit():
-                year, month, val = int(parts[0]), int(parts[1]), float(parts[2])
-                data.append((year, month, val))
-        if not data:
-            return None
-        _, _, oni_val = data[-1]
-        if oni_val >= 0.5:
+        url = "https://raw.githubusercontent.com/hadiningrat29/dinamika-atmosfer-data/main/oni_realtime.csv"
+        df = pd.read_csv(url)
+        last_val = df["anomalia"].iloc[-1]
+        if last_val >= 0.5:
             return "El Niño"
-        elif oni_val <= -0.5:
+        elif last_val <= -0.5:
             return "La Niña"
         else:
             return "Netral"
@@ -33,7 +25,7 @@ def fetch_enso():
         return None
 
 # =============================
-# Fungsi Data IOD
+# Fungsi Data IOD (web scraping BOM)
 # =============================
 @st.cache_data
 def fetch_iod():
@@ -62,9 +54,10 @@ def fetch_mjo():
         url = "https://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt"
         r = requests.get(url, timeout=10)
         lines = r.text.strip().split('\n')
-        if not lines or len(lines[-1].split()) < 5:
+        data = [line for line in lines if line and len(line.split()) >= 5]
+        if not data:
             return None
-        last = lines[-1].split()
+        last = data[-1].split()
         phase = int(float(last[3]))
         amp = float(last[4])
         if amp < 1.0:
