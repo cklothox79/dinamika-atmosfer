@@ -129,10 +129,7 @@ if kota:
             st.markdown("🟣 IOD Netral — tidak berdampak signifikan.")
 
 # =============================
-# Catatan Animasi (opsional)
+# Footer Info
 # =============================
 st.markdown("---")
-st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
-st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif", use_container_width=True)
-
 st.caption("Versi awal pembagian skala global, regional, dan lokal. Data regional akan ditambahkan lebih lanjut.")
