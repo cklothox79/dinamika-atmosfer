@@ -1,34 +1,42 @@
 import streamlit as st
 import requests
-import pandas as pd
 
 st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # ================================
-# Fungsi Ambil Data ENSO
+# Fungsi Ambil Data ENSO (ONI)
 # ================================
 @st.cache_data
 def fetch_enso():
     try:
         url = "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.txt"
-        res = requests.get(url)
-        lines = res.text.strip().split('\n')[1:]
-        for line in reversed(lines):
-            parts = line.strip().split()
+        r = requests.get(url)
+        lines = r.text.strip().split('\n')[1:]
+        data = []
+        for line in lines:
+            parts = line.split()
             if len(parts) >= 13:
-                last_val = parts[-1]
-                try:
-                    oni = float(last_val)
-                    if oni >= 0.5:
-                        return "El Niño"
-                    elif oni <= -0.5:
-                        return "La Niña"
-                    else:
-                        return "Netral"
-                except:
-                    continue
-        return None
+                year = parts[0]
+                vals = parts[1:]
+                for idx, val in enumerate(vals):
+                    try:
+                        oni = float(val)
+                    except:
+                        continue
+                    # gunakan label bulan
+                    month_labels = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
+                    tri = month_labels[idx]
+                    data.append((int(year), tri, oni))
+        if not data:
+            return None
+        year, tri, oni = data[-1]
+        if oni >= 0.5:
+            return "El Niño"
+        elif oni <= -0.5:
+            return "La Niña"
+        else:
+            return "Netral"
     except:
         return None
 
@@ -39,23 +47,29 @@ def fetch_enso():
 def fetch_iod():
     try:
         url = "https://www.bom.gov.au/climate/enso/indices/archive/iod.txt"
-        res = requests.get(url)
-        lines = res.text.strip().split('\n')
-        for line in reversed(lines):
+        r = requests.get(url)
+        lines = r.text.strip().split('\n')
+        data = []
+        for line in lines:
             if line and line[0].isdigit():
-                parts = line.strip().split()
+                parts = line.split()
                 if len(parts) >= 3:
                     try:
-                        iod_val = float(parts[2])
-                        if iod_val >= 0.4:
-                            return "IOD Positif"
-                        elif iod_val <= -0.4:
-                            return "IOD Negatif"
-                        else:
-                            return "Netral"
+                        y = int(parts[0])
+                        m = int(parts[1])
+                        val = float(parts[2])
                     except:
                         continue
-        return None
+                    data.append((y, m, val))
+        if not data:
+            return None
+        y, m, iod_val = data[-1]
+        if iod_val >= 0.4:
+            return "IOD Positif"
+        elif iod_val <= -0.4:
+            return "IOD Negatif"
+        else:
+            return "Netral"
     except:
         return None
 
@@ -84,29 +98,6 @@ else:
     st.warning("❌ Gagal memuat data IOD.")
 
 # ================================
-# Dampak Skala terhadap Kota
-# ================================
-if kota:
-    st.markdown("---")
-    st.markdown(f"### 📌 Dampak Skala Atmosfer terhadap Kota: `{kota}`")
-
-    # Dampak ENSO
-    if fase_enso == "El Niño":
-        st.markdown("🔴 **El Niño** dapat menyebabkan penurunan curah hujan di wilayah Indonesia, termasuk kota ini. Waspadai potensi kekeringan dan suhu lebih panas dari biasanya.")
-    elif fase_enso == "La Niña":
-        st.markdown("🔵 **La Niña** meningkatkan potensi curah hujan di sebagian besar wilayah Indonesia, termasuk kota ini. Hati-hati terhadap banjir dan tanah longsor.")
-    elif fase_enso == "Netral":
-        st.markdown("⚪ Saat ini kondisi **Netral** (tidak ada El Niño atau La Niña), tetapi potensi hujan masih dipengaruhi faktor lain seperti MJO dan lokalitas.")
-
-    # Dampak IOD
-    if fase_iod == "IOD Positif":
-        st.markdown("🟠 **IOD Positif** cenderung mengurangi pasokan uap air dari Samudra Hindia ke Indonesia bagian barat, termasuk kota ini. Cuaca cenderung lebih kering.")
-    elif fase_iod == "IOD Negatif":
-        st.markdown("🔵 **IOD Negatif** mendorong peningkatan curah hujan di wilayah barat dan selatan Indonesia. Kota ini bisa mengalami lebih banyak hari hujan.")
-    elif fase_iod == "Netral":
-        st.markdown("⚪ **IOD Netral**, tidak berdampak dominan saat ini, namun bisa dipengaruhi oleh faktor lain.")
-
-# ================================
 # Edukasi Skala Atmosfer
 # ================================
 with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)", expanded=True):
@@ -130,3 +121,9 @@ with st.expander("🎓 Penjelasan Skala Atmosfer (Klik untuk lihat)", expanded=T
 # ================================
 st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
 st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif", use_container_width=True)
+
+# ================================
+# Catatan Lokasi (Opsional)
+# ================================
+if kota:
+    st.markdown(f"---\n📌 **Informasi ini ditujukan untuk kota: `{kota}`**\nSilakan jelajahi halaman lainnya untuk melihat pengaruh skala atmosfer terhadap kota ini.")
