@@ -121,8 +121,8 @@ if kota:
         rossby = fetch_rossby()
         itcz = fetch_itcz()
 
-        st.info(f"🌐 Gelombang Rossby: {rossby}")
-        st.info(f"🌧️ Posisi ITCZ: {itcz}")
+        st.info(f"🌐 Gelombang Rossby: {rossby} (indeks belum tersedia)")
+        st.info(f"🌧️ Posisi ITCZ: {itcz} (indeks belum tersedia)")
 
     # =============================
     # Skala Lokal
