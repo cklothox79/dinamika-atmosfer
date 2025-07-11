@@ -14,38 +14,70 @@ Halaman ini menampilkan grafik **ONI (ENSO Index)** dan **IOD Index** berdasarka
 - 🟠 IOD: Perbedaan suhu laut Samudra Hindia barat & timur
 """)
 
-# ================================
-# Fungsi Ambil Data ONI (ENSO)
-# ================================
+# ========================================
+# Fungsi Ambil Data ONI (NOAA)
+# ========================================
 @st.cache_data
 def fetch_oni():
     url = "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.txt"
-    r = requests.get(url)
-    raw = r.text.strip().split('\n')[1:]  # skip header
-    df = pd.read_csv(StringIO('\n'.join(raw)), delim_whitespace=True)
-    data = df.melt(id_vars=['YR'], var_name='Bulan', value_name='ONI')
-    data['Tanggal'] = data['YR'].astype(str) + '-' + data['Bulan']
-    data['Tanggal'] = pd.to_datetime(data['Tanggal'], format='%Y-%b')
-    data = data.sort_values('Tanggal')
-    return data
+    res = requests.get(url)
+    lines = res.text.strip().split('\n')[1:]
 
-# ================================
-# Fungsi Ambil Data IOD
-# ================================
+    data = []
+    for line in lines:
+        parts = line.strip().split()
+        if len(parts) >= 13:
+            year = parts[0]
+            months = parts[1:]
+            for i, val in enumerate(months):
+                try:
+                    month_str = ['DJF', 'JFM', 'FMA', 'MAM', 'AMJ', 'MJJ', 
+                                 'JJA', 'JAS', 'ASO', 'SON', 'OND', 'NDJ'][i]
+                    data.append({
+                        'Year': int(year),
+                        'TriMonth': month_str,
+                        'ONI': float(val)
+                    })
+                except:
+                    continue
+    df = pd.DataFrame(data)
+
+    # Mapping bulan tengah dari tiap 3-bulanan
+    month_map = {
+        'DJF': '01', 'JFM': '02', 'FMA': '03', 'MAM': '04',
+        'AMJ': '05', 'MJJ': '06', 'JJA': '07', 'JAS': '08',
+        'ASO': '09', 'SON': '10', 'OND': '11', 'NDJ': '12'
+    }
+    df['Tanggal'] = pd.to_datetime(df['Year'].astype(str) + '-' + df['TriMonth'].map(month_map), errors='coerce')
+    return df.dropna(subset=['Tanggal'])
+
+# ========================================
+# Fungsi Ambil Data IOD (BOM Australia)
+# ========================================
 @st.cache_data
 def fetch_iod():
     url = "https://www.bom.gov.au/climate/enso/indices/archive/iod.txt"
-    r = requests.get(url)
-    lines = r.text.strip().split('\n')
-    data_lines = [l for l in lines if l and l[0].isdigit()]
-    df = pd.read_csv(StringIO('\n'.join(data_lines)), delim_whitespace=True)
-    df['Tanggal'] = pd.to_datetime(df[['YR', 'MON']].assign(DAY=15))
-    df = df[['Tanggal', 'IOD']]
-    return df
+    res = requests.get(url)
+    lines = res.text.strip().split('\n')
 
-# ================================
-# Tampilkan Grafik ONI
-# ================================
+    data = []
+    for line in lines:
+        if line and line[0].isdigit():
+            parts = line.strip().split()
+            if len(parts) >= 3:
+                try:
+                    year, month, iod_val = int(parts[0]), int(parts[1]), float(parts[2])
+                    data.append({
+                        'Tanggal': pd.to_datetime(f"{year}-{month:02d}-15"),
+                        'IOD': iod_val
+                    })
+                except:
+                    continue
+    return pd.DataFrame(data)
+
+# ========================================
+# Grafik ONI
+# ========================================
 st.subheader("🔴 Oceanic Niño Index (ONI)")
 
 try:
@@ -64,9 +96,9 @@ try:
 except Exception as e:
     st.error(f"Gagal memuat data ONI: {e}")
 
-# ================================
-# Tampilkan Grafik IOD
-# ================================
+# ========================================
+# Grafik IOD
+# ========================================
 st.subheader("🟠 Indian Ocean Dipole (IOD) Index")
 
 try:
