@@ -12,72 +12,12 @@ st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 @st.cache_data
 def fetch_enso():
     try:
-        url = "https://raw.githubusercontent.com/hadiningrat29/dinamika-atmosfer-data/main/oni_realtime.csv"
+        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/itcz_position.csv"
         df = pd.read_csv(url)
-        if df.empty:
-            return "Netral"
-        last_val = df["anomalia"].dropna().iloc[-1]
-        if last_val >= 0.5:
-            return "El Niño"
-        elif last_val <= -0.5:
-            return "La Niña"
-        else:
-            return "Netral"
+        row = df.iloc[-1]
+        return f"{row['latitude']}° (data {row['tanggal']})"
     except:
-        return "Netral"
-
-# =============================
-# Fungsi Data IOD (web scraping BOM)
-# =============================
-@st.cache_data
-def fetch_iod():
-    try:
-        url = "https://www.bom.gov.au/climate/iod/"
-        r = requests.get(url, timeout=10)
-        m = re.search(r"IOD index.*?([-]?\d+\.\d+)", r.text)
-        if not m:
-            return "Netral"
-        iod_val = float(m.group(1))
-        if iod_val >= 0.4:
-            return "IOD Positif"
-        elif iod_val <= -0.4:
-            return "IOD Negatif"
-        else:
-            return "Netral"
-    except:
-        return "Netral"
-
-# =============================
-# Fungsi Data MJO
-# =============================
-@st.cache_data
-def fetch_mjo():
-    try:
-        url = "https://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt"
-        r = requests.get(url, timeout=10)
-        lines = r.text.strip().split('\n')
-        data = [line for line in lines if line and len(line.split()) >= 5]
-        if not data:
-            return "Tidak aktif"
-        last = data[-1].split()
-        phase = int(float(last[3]))
-        amp = float(last[4])
-        if amp < 1.0:
-            return "Tidak aktif"
-        return f"Fase {phase}"
-    except:
-        return "Tidak aktif"
-
-# =============================
-# Fungsi Placeholder Rossby dan ITCZ
-# =============================
-@st.cache_data
-def fetch_rossby():
-    return "Belum tersedia"
-
-@st.cache_data
-def fetch_itcz():
-    return "Belum tersedia"
+        return "Tidak tersedia"
 
 # =============================
 # Input Lokasi
@@ -122,7 +62,7 @@ if kota:
         itcz = fetch_itcz()
 
         st.info(f"🌐 Gelombang Rossby: {rossby} (indeks belum tersedia)")
-        st.info(f"🌧️ Posisi ITCZ: {itcz} (indeks belum tersedia)")
+        st.info(f"🌧️ Posisi ITCZ: {itcz}")
 
     # =============================
     # Skala Lokal
