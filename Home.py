@@ -7,69 +7,10 @@ st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide"
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
 # =============================
-# Fungsi Data ENSO
+# Fungsi Data ENSO (dari GitHub CSV)
 # =============================
 @st.cache_data
 def fetch_enso():
-    try:
-        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/oni_realtime.csv"
-        df = pd.read_csv(url)
-        last = df["anomalia"].dropna().iloc[-1]
-        if last >= 0.5:
-            return "El Niño"
-        elif last <= -0.5:
-            return "La Niña"
-        else:
-            return "Netral"
-    except:
-        return "Netral"
-
-# =============================
-# Fungsi Data IOD
-# =============================
-@st.cache_data
-def fetch_iod():
-    try:
-        url = "https://www.bom.gov.au/climate/iod/"
-        r = requests.get(url, timeout=10)
-        m = re.search(r"IOD index.*?([-]?\d+\.\d+)", r.text)
-        if not m:
-            return "Netral"
-        iod_val = float(m.group(1))
-        if iod_val >= 0.4:
-            return "IOD Positif"
-        elif iod_val <= -0.4:
-            return "IOD Negatif"
-        else:
-            return "Netral"
-    except:
-        return "Netral"
-
-# =============================
-# Fungsi Data MJO
-# =============================
-@st.cache_data
-def fetch_mjo():
-    try:
-        url = "https://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt"
-        res = requests.get(url, timeout=10)
-        lines = res.text.strip().split("\n")
-        lines = [l for l in lines if l and l[0].isdigit()]
-        last = lines[-1].split()
-        phase = int(float(last[3]))
-        amp = float(last[4])
-        if amp >= 1.0:
-            return f"Fase {phase} (aktif)"
-        else:
-            return "Tidak aktif"
-    except:
-        return "Tidak tersedia"
-
-# =============================
-# Fungsi Data ITCZ
-# =============================
-@st.cache_data
-def fetch_itcz():
     try:
         url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/itcz_position.csv"
         df = pd.read_csv(url)
@@ -77,13 +18,6 @@ def fetch_itcz():
         return f"{row['latitude']}° (data {row['tanggal']})"
     except:
         return "Tidak tersedia"
-
-# =============================
-# Fungsi Rossby
-# =============================
-@st.cache_data
-def fetch_rossby():
-    return "sedang diamati. Gelombang ini memengaruhi cuaca 10–20 hari dan tekanan atmosfer menengah-latitud."
 
 # =============================
 # Input Lokasi
@@ -127,7 +61,7 @@ if kota:
         rossby = fetch_rossby()
         itcz = fetch_itcz()
 
-        st.info(f"🌐 Gelombang Rossby: {rossby}")
+        st.info(f"🌐 Gelombang Rossby: {rossby} (indeks belum tersedia)")
         st.info(f"🌧️ Posisi ITCZ: {itcz}")
 
     # =============================
