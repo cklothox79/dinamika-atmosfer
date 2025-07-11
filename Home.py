@@ -5,30 +5,28 @@ import re
 st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
 st.title("🌏 Dinamika Atmosfer - Halaman Utama")
 
-# ===============================
-# Fungsi Ambil Data ENSO (ONI)
-# ===============================
+# ===========================
+# Fungsi Ambil Data ENSO
+# ===========================
 @st.cache_data
-
 def fetch_enso():
     try:
         url = "https://psl.noaa.gov/data/correlation/oni.data"
-        r = requests.get(url, timeout=10)
-        lines = r.text.splitlines()[1:]
+        res = requests.get(url, timeout=10)
+        lines = res.text.strip().split("\n")
         data = []
-        for line in lines:
+        for line in lines[1:]:
             parts = line.strip().split()
-            if len(parts) == 13 and parts[0].isdigit():
-                year = int(parts[0])
-                for i, val in enumerate(parts[1:]):
-                    try:
-                        oni = float(val)
-                        data.append((year, i+1, oni))
-                    except:
-                        continue
+            year = parts[0]
+            values = parts[1:]
+            for i, val in enumerate(values):
+                try:
+                    data.append(float(val))
+                except:
+                    pass
         if not data:
             return None
-        _, _, latest = data[-1]
+        latest = data[-1]
         if latest >= 0.5:
             return "El Niño"
         elif latest <= -0.5:
@@ -38,11 +36,10 @@ def fetch_enso():
     except:
         return None
 
-# ===============================
+# ===========================
 # Fungsi Ambil Data IOD
-# ===============================
+# ===========================
 @st.cache_data
-
 def fetch_iod():
     try:
         url = "https://www.bom.gov.au/climate/iod/"
@@ -50,21 +47,26 @@ def fetch_iod():
         m = re.search(r"IOD index.*?([-]?\d+\.\d+)", r.text)
         if not m:
             return "Netral"
-        iod = float(m.group(1))
-        return ("IOD Positif" if iod >= 0.4 else "IOD Negatif" if iod <= -0.4 else "Netral")
+        iod_val = float(m.group(1))
+        if iod_val >= 0.4:
+            return "IOD Positif"
+        elif iod_val <= -0.4:
+            return "IOD Negatif"
+        else:
+            return "Netral"
     except:
         return None
 
-# ===============================
+# ===========================
 # Input Kota
-# ===============================
+# ===========================
 st.markdown("### 📍 Masukkan Nama Kota")
-kota = st.text_input("Contoh: Malang, Bandung, Jakarta")
+kota = st.text_input("Contoh: Malang, Bandung, Jakarta", key="lokasi_input")
 
-# ===============================
-# Status Global (ENSO & IOD)
-# ===============================
-st.markdown("### 🌐 Status Global Atmosfer")
+# ===========================
+# Status Global
+# ===========================
+st.markdown("### 🌐 Status Global: ENSO & IOD (Real-Time)")
 fase_enso = fetch_enso()
 fase_iod = fetch_iod()
 
@@ -78,39 +80,35 @@ if isinstance(fase_iod, str):
 else:
     st.warning("❌ Gagal memuat data IOD.")
 
-# ===============================
-# Dampak Skala Global ke Kota
-# ===============================
+# ===========================
+# Dampak Skala Global (ENSO + IOD)
+# ===========================
 if kota:
     st.markdown("---")
-    st.markdown(f"### 📌 Dampak Skala Atmosfer terhadap Kota: `{kota}`")
+    st.markdown(f"### ⭐ Dampak Skala Atmosfer terhadap Kota: `{kota.lower()}`")
     if fase_enso == "El Niño":
-        st.markdown("🔴 Potensi kekeringan tinggi.")
+        st.markdown("🔴 Potensi kekeringan meningkat.")
     elif fase_enso == "La Niña":
         st.markdown("🔵 Potensi hujan/banjir tinggi.")
     else:
-        st.markdown("⚪ ENSO Netral — pengaruh lokal mendominasi.")
+        st.markdown("⚪ ENSO Netral — dampak lokal lebih dominan.")
 
     if fase_iod == "IOD Positif":
-        st.markdown("🟠 Cuaca lebih kering di barat.")
+        st.markdown("🟠 Cuaca lebih kering di wilayah barat Indonesia.")
     elif fase_iod == "IOD Negatif":
-        st.markdown("🔵 Potensi hujan meningkat.")
+        st.markdown("🔵 Hujan meningkat di barat Indonesia.")
     else:
         st.markdown("🟣 IOD Netral — tidak berdampak signifikan.")
 
-# ===============================
-# Placeholder untuk Regional & Lokal
-# ===============================
+# ===========================
+# Placeholder Skala Regional
+# ===========================
 st.markdown("---")
-st.markdown("### 🌎 Status Regional Atmosfer (dalam pengembangan)")
-st.info("📡 Data skala regional akan menampilkan MJO, angin, tekanan dll berdasarkan wilayah Asia Tenggara.")
+st.markdown("### 🗺️ Skala Regional")
+st.info("Fitur skala regional sedang dalam pengembangan.")
 
-st.markdown("---")
-st.markdown("### 🏙️ Status Lokal Atmosfer (dalam pengembangan)")
-st.info("🌧️ Akan memuat prakiraan berbasis kota dan pengaruh gelombang atmosfer lokal seperti konvergensi & urban effect.")
-
-# ===============================
-# Navigasi Edukasi
-# ===============================
-st.markdown("---")
-st.markdown("📘 Lihat penjelasan lengkap di halaman **Edukasi Skala Atmosfer** pada menu samping.")
+# ===========================
+# Placeholder Skala Lokal
+# ===========================
+st.markdown("### 🏙️ Skala Lokal")
+st.info("Fitur skala lokal akan tersedia dalam versi selanjutnya.")
