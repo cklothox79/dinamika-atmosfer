@@ -54,6 +54,26 @@ def fetch_iod():
         return None
 
 # =============================
+# Fungsi Data MJO
+# =============================
+@st.cache_data
+def fetch_mjo():
+    try:
+        url = "https://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt"
+        r = requests.get(url, timeout=10)
+        lines = r.text.strip().split('\n')
+        if not lines or len(lines[-1].split()) < 5:
+            return None
+        last = lines[-1].split()
+        phase = int(float(last[3]))
+        amp = float(last[4])
+        if amp < 1.0:
+            return "Tidak aktif"
+        return f"Fase {phase}"
+    except:
+        return None
+
+# =============================
 # Input Lokasi
 # =============================
 st.markdown("### 📍 Masukkan Nama Kota")
@@ -82,11 +102,17 @@ if kota:
             st.warning("❌ Gagal memuat data IOD.")
 
     # =============================
-    # Skala Regional
+    # Skala Regional: MJO (sementara)
     # =============================
     with col2:
         st.subheader("🗺️ Skala Regional")
-        st.info("(Belum terhubung - akan memuat fenomena regional seperti MJO, Gelombang Rossby, ITCZ, dll yang relevan dengan wilayah kota)")
+        fase_mjo = fetch_mjo()
+        if isinstance(fase_mjo, str):
+            st.success(f"☁️ MJO Saat Ini: **{fase_mjo}**")
+        else:
+            st.warning("⚠️ Gagal memuat data MJO.")
+
+        st.info("📡 Data Rossby dan ITCZ akan segera tersedia.")
 
     # =============================
     # Skala Lokal
@@ -114,4 +140,4 @@ st.markdown("---")
 st.markdown("### 🌊 Animasi ENSO - Sumber: BOM Australia")
 st.image("https://www.bom.gov.au/archive/oceanography/ocean_analyse/IDYOC002/IDYOC002.gif", use_container_width=True)
 
-st.caption("Versi awal pembagian skala global, regional, dan lokal. Regional akan diperluas pada tahap berikutnya.")
+st.caption("Versi awal pembagian skala global, regional, dan lokal. Data regional akan ditambahkan lebih lanjut.")
