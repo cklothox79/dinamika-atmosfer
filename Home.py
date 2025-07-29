@@ -19,25 +19,21 @@ st.write("---")
 # -------------------------------
 # DATA DUMMY (BISA DIGANTI API)
 # -------------------------------
-# Cuaca real-time (dummy)
 cuaca = {
     "Suhu": f"{random.randint(27, 33)} °C",
     "Kelembaban": f"{random.randint(60, 90)} %",
     "Curah Hujan": f"{random.randint(0, 20)} mm"
 }
 
-# NDVI data
 try:
     df_ndvi = pd.read_csv("ndvi_kota_besar_indo_jun2023.csv")
     ndvi_val = df_ndvi[df_ndvi['kota'].str.lower() == kota.lower()]['ndvi'].values[0]
 except:
     ndvi_val = round(random.uniform(0.5, 0.9), 2)
 
-# ENSO & IOD lokal (dummy)
 enso_local = "Netral – faktor lokal lebih berperan."
 iod_local = "Netral – tidak berdampak signifikan."
 
-# Histori curah hujan (dummy 7 hari)
 hujan_data = [random.randint(0, 30) for _ in range(7)]
 hari = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
@@ -61,15 +57,9 @@ with col3:
     st.info(f"**ENSO:** {enso_local}")
     st.info(f"**IOD:** {iod_local}")
 
-# -------------------------------
-# GRAFIK HISTORI CURAH HUJAN
-# -------------------------------
 st.write("---")
 st.markdown("### 📊 Curah Hujan 7 Hari Terakhir")
 df_hujan = pd.DataFrame({"Hari": hari, "Curah Hujan (mm)": hujan_data})
 st.bar_chart(df_hujan.set_index("Hari"))
 
-# -------------------------------
-# CATATAN
-# -------------------------------
 st.caption("⚠️ Data sementara (dummy). Data cuaca dan curah hujan akan dihubungkan dengan API atau dataset BMKG.")
