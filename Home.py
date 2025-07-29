@@ -1,107 +1,96 @@
 import streamlit as st
 import pandas as pd
 import random
-from geopy.geocoders import Nominatim
-import folium
-from streamlit_folium import st_folium
 
 # -------------------------------
-# CONFIGURASI HALAMAN
+# CONFIG
 # -------------------------------
 st.set_page_config(page_title="Dinamika Atmosfer", layout="wide")
+st.title("🌦️ Dinamika Atmosfer")
+st.markdown("Masukkan nama kota untuk melihat **faktor atmosfer skala Lokal, Regional, dan Global**:")
 
-# -------------------------------
-# INPUT NAMA KOTA
-# -------------------------------
-st.title("🌦️ Dinamika Atmosfer - Halaman Utama")
-st.markdown("Masukkan nama kota untuk melihat **faktor lokal atmosfer**:")
-kota = st.text_input("Contoh: Malang, Bandung, Jakarta", "Surabaya").title()
+kota = st.text_input("Contoh: Surabaya, Sidoarjo, Malang", "Surabaya").title()
 st.write("---")
 
 # -------------------------------
 # DATA DUMMY
 # -------------------------------
-cuaca = {
-    "Suhu": random.randint(27, 33),
-    "Kelembaban": random.randint(60, 90),
-    "Curah Hujan": random.randint(0, 20)
-}
+# Lokal
+ndvi_val = round(random.uniform(0.5, 0.9), 2)
+curah_hujan = random.randint(0, 20)
+anomali_suhu = random.choice([-1, 0, 1, 2])
+pm25 = pm10 = None
 
-# Data NDVI
-try:
-    df_ndvi = pd.read_csv("ndvi_kota_besar_indo_jun2023.csv")
-    ndvi_val = df_ndvi[df_ndvi['kota'].str.lower() == kota.lower()]['ndvi'].values[0]
-except:
-    ndvi_val = round(random.uniform(0.5, 0.9), 2)
+# Dummy PM2.5 & PM10 hanya untuk Surabaya dan Sidoarjo
+if kota in ["Surabaya", "Sidoarjo"]:
+    pm25 = random.randint(10, 80)
+    pm10 = random.randint(20, 150)
 
-# ENSO & IOD lokal (dummy)
-enso_local = "Netral – faktor lokal lebih berperan."
-iod_local = "Netral – tidak berdampak signifikan."
+# Regional (dummy)
+mjo_phase = random.choice(["Inaktif", "Aktif di fase 3", "Aktif di fase 5"])
+itcz_pos = random.choice(["Selatan Jawa", "Utara Kalimantan", "Tidak signifikan"])
 
-# Histori curah hujan (dummy 7 hari)
-hujan_data = [random.randint(0, 30) for _ in range(7)]
-hari = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
-
-# Anomali suhu (dummy)
-suhu_normal = 30
-anomali_suhu = cuaca["Suhu"] - suhu_normal
+# Global (dummy)
+enso = random.choice(["Netral", "El Niño Lemah", "La Niña Lemah"])
+iod = random.choice(["Netral", "Positif", "Negatif"])
 
 # -------------------------------
-# LAYOUT DASHBOARD
+# 3 KOLOM SKALA
 # -------------------------------
 col1, col2, col3 = st.columns(3)
 
+# Skala Lokal
 with col1:
-    st.markdown("### 🌤️ Cuaca Saat Ini")
-    st.write(f"**Suhu:** {cuaca['Suhu']} °C")
-    st.write(f"**Kelembaban:** {cuaca['Kelembaban']} %")
-    st.write(f"**Curah Hujan:** {cuaca['Curah Hujan']} mm")
+    st.subheader("🏠 Skala Lokal")
+    st.write(f"**NDVI:** {ndvi_val}")
+    st.write(f"**Curah Hujan:** {curah_hujan} mm")
+    if anomali_suhu > 0:
+        st.error(f"Anomali suhu: +{anomali_suhu}°C di atas normal")
+    elif anomali_suhu < 0:
+        st.warning(f"Anomali suhu: {anomali_suhu}°C di bawah normal")
+    else:
+        st.success("Suhu normal")
+    
+    # PM2.5 & PM10 jika kota Sidoarjo atau Surabaya
+    if pm25 is not None:
+        st.write(f"**PM2.5:** {pm25} µg/m³")
+        st.write(f"**PM10:** {pm10} µg/m³")
+        if pm25 < 25 and pm10 < 50:
+            st.success("Kualitas udara: Baik")
+        elif pm25 < 50 and pm10 < 100:
+            st.warning("Kualitas udara: Sedang")
+        else:
+            st.error("Kualitas udara: Tidak Sehat")
 
+# Skala Regional
 with col2:
-    st.markdown("### 🌿 NDVI Lokal")
-    st.write(f"**NDVI:** {ndvi_val} (Hijau {'tinggi' if ndvi_val >= 0.7 else 'rendah'})")
-    st.progress(min(ndvi_val, 1.0))
+    st.subheader("🌎 Skala Regional")
+    st.write(f"**MJO:** {mjo_phase}")
+    st.write(f"**Posisi ITCZ:** {itcz_pos}")
+    st.write("**Status Hujan Regional:** Normal")
 
+# Skala Global
 with col3:
-    st.markdown("### 🌊 ENSO & IOD Lokal")
-    st.info(f"**ENSO:** {enso_local}")
-    st.info(f"**IOD:** {iod_local}")
-
-st.write("---")
-st.markdown("### 📊 Curah Hujan 7 Hari Terakhir")
-df_hujan = pd.DataFrame({"Hari": hari, "Curah Hujan (mm)": hujan_data})
-st.bar_chart(df_hujan.set_index("Hari"))
+    st.subheader("🌐 Skala Global")
+    st.write(f"**ENSO:** {enso}")
+    st.write(f"**IOD:** {iod}")
+    st.write("**SST Anomali:** +0.5°C (dummy)")
 
 # -------------------------------
-# ANOMALI SUHU
+# PENJELASAN FENOMENA TERBARU
 # -------------------------------
 st.write("---")
-st.markdown("### 🌡️ Anomali Suhu Lokal")
+st.markdown("### 📝 Fenomena Atmosfer Terkini")
+
+narasi = f"Beberapa hari terakhir, {kota} mengalami kondisi cuaca dengan curah hujan {curah_hujan} mm per hari. "
 if anomali_suhu > 0:
-    st.error(f"Suhu lebih tinggi {anomali_suhu}°C dari normal ({suhu_normal}°C).")
+    narasi += f"Suhu rata-rata {anomali_suhu}°C lebih tinggi dari normal. "
 elif anomali_suhu < 0:
-    st.warning(f"Suhu lebih rendah {abs(anomali_suhu)}°C dari normal ({suhu_normal}°C).")
-else:
-    st.success("Suhu berada pada kisaran normal.")
+    narasi += f"Suhu rata-rata {abs(anomali_suhu)}°C lebih rendah dari normal. "
 
-# -------------------------------
-# MINI MAP LOKASI
-# -------------------------------
-st.write("---")
-st.markdown("### 🗺️ Lokasi Kota")
+if pm25 is not None:
+    narasi += f"Kualitas udara terpantau PM2.5={pm25} µg/m³ dan PM10={pm10} µg/m³. "
 
-geolocator = Nominatim(user_agent="geoapi")
-location = geolocator.geocode(kota)
+narasi += f"Secara regional, {mjo_phase}, ITCZ berada di {itcz_pos}. Fenomena global menunjukkan ENSO {enso} dan IOD {iod}."
 
-if location:
-    map_center = [location.latitude, location.longitude]
-    m = folium.Map(location=map_center, zoom_start=11)
-    folium.Marker(map_center, popup=kota).add_to(m)
-    st_folium(m, width=700, height=400)
-else:
-    st.warning("Lokasi kota tidak ditemukan.")
-
-# -------------------------------
-# CATATAN
-# -------------------------------
-st.caption("⚠️ Data sementara (dummy). Data cuaca, curah hujan, dan anomali suhu akan dihubungkan dengan API BMKG/OpenWeather.")
+st.info(narasi)
