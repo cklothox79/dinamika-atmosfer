@@ -1,179 +1,75 @@
 import streamlit as st
-import requests
-import re
 import pandas as pd
+import random
 
-st.set_page_config(page_title="Dinamika Atmosfer - Halaman Utama", layout="wide")
-st.title("🌏 Dinamika Atmosfer - Halaman Utama")
+# -------------------------------
+# CONFIGURASI HALAMAN
+# -------------------------------
+st.set_page_config(page_title="Dinamika Atmosfer", layout="wide")
 
-# =============================
-# Fungsi ENSO dari CSV GitHub
-# =============================
-@st.cache_data
-def fetch_enso():
-    try:
-        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/oni_realtime.csv"
-        df = pd.read_csv(url)
-        last = df["anomalia"].dropna().iloc[-1]
-        if last >= 0.5:
-            return "El Niño"
-        elif last <= -0.5:
-            return "La Niña"
-        else:
-            return "Netral"
-    except:
-        return "Netral"
+# -------------------------------
+# JUDUL APLIKASI
+# -------------------------------
+st.title("🌦️ Dinamika Atmosfer - Halaman Utama")
+st.markdown("Masukkan nama kota untuk melihat **faktor lokal atmosfer**:")
+kota = st.text_input("Contoh: Malang, Bandung, Jakarta", "Surabaya").title()
 
-# =============================
-# Fungsi IOD (dari BOM)
-# =============================
-@st.cache_data
-def fetch_iod():
-    try:
-        url = "https://www.bom.gov.au/climate/iod/"
-        r = requests.get(url, timeout=10)
-        m = re.search(r"IOD index.*?([-]?\d+\.\d+)", r.text)
-        if not m:
-            return "Netral"
-        iod_val = float(m.group(1))
-        if iod_val >= 0.4:
-            return "IOD Positif"
-        elif iod_val <= -0.4:
-            return "IOD Negatif"
-        else:
-            return "Netral"
-    except:
-        return "Netral"
+st.write("---")
 
-# =============================
-# Fungsi MJO dari BOM
-# =============================
-@st.cache_data
-def fetch_mjo():
-    try:
-        url = "https://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt"
-        res = requests.get(url, timeout=10)
-        lines = res.text.strip().split("\n")
-        lines = [l for l in lines if l and l[0].isdigit()]
-        last = lines[-1].split()
-        phase = int(float(last[3]))
-        amp = float(last[4])
-        if amp >= 1.0:
-            return f"Fase {phase} (aktif)"
-        else:
-            return "Tidak aktif"
-    except:
-        return "Tidak tersedia"
+# -------------------------------
+# DATA DUMMY (BISA DIGANTI API)
+# -------------------------------
+# Cuaca real-time (dummy)
+cuaca = {
+    "Suhu": f"{random.randint(27, 33)} °C",
+    "Kelembaban": f"{random.randint(60, 90)} %",
+    "Curah Hujan": f"{random.randint(0, 20)} mm"
+}
 
-# =============================
-# Fungsi ITCZ dari CSV GitHub
-# =============================
-@st.cache_data
-def fetch_itcz():
-    try:
-        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/main/itcz_position.csv"
-        df = pd.read_csv(url)
-        row = df.iloc[-1]
-        return f"{row['latitude']}° (data {row['tanggal']})"
-    except:
-        return "Tidak tersedia"
+# NDVI data
+try:
+    df_ndvi = pd.read_csv("ndvi_kota_besar_indo_jun2023.csv")
+    ndvi_val = df_ndvi[df_ndvi['kota'].str.lower() == kota.lower()]['ndvi'].values[0]
+except:
+    ndvi_val = round(random.uniform(0.5, 0.9), 2)
 
-# =============================
-# Fungsi Rossby (deskripsi)
-# =============================
-@st.cache_data
-def fetch_rossby():
-    return "sedang diamati. Gelombang ini memengaruhi cuaca 10–20 hari dan tekanan atmosfer menengah-latitud."
+# ENSO & IOD lokal (dummy)
+enso_local = "Netral – faktor lokal lebih berperan."
+iod_local = "Netral – tidak berdampak signifikan."
 
-# =============================
-# Fungsi NDVI per Kota
-# =============================
-@st.cache_data
-def fetch_ndvi(kota):
-    try:
-        url = "https://raw.githubusercontent.com/cklothox79/dinamika-atmosfer/refs/heads/main/ndvi_kota_besar_indo_jun2024.csv"
-        df = pd.read_csv(url)
-        row = df[df['KOTA'].str.lower() == kota.lower()]
-        if row.empty:
-            return "🌿 NDVI tidak tersedia untuk kota ini."
-        val = float(row["mean"].values[0])
-        if val < 0.2:
-            return f"🌿 NDVI {val:.2f} — tutupan vegetasi rendah"
-        elif val < 0.4:
-            return f"🌿 NDVI {val:.2f} — sedang"
-        else:
-            return f"🌿 NDVI {val:.2f} — hijau tinggi"
-    except:
-        return "🌿 NDVI tidak tersedia"
+# Histori curah hujan (dummy 7 hari)
+hujan_data = [random.randint(0, 30) for _ in range(7)]
+hari = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
-# =============================
-# Input Lokasi
-# =============================
-st.markdown("### 📍 Masukkan Nama Kota")
-kota = st.text_input("Contoh: Malang, Bandung, Jakarta", key="lokasi_input")
+# -------------------------------
+# LAYOUT DASHBOARD
+# -------------------------------
+col1, col2, col3 = st.columns(3)
 
-if kota:
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("### 🌤️ Cuaca Saat Ini")
+    for key, val in cuaca.items():
+        st.write(f"**{key}:** {val}")
 
-    # =============================
-    # Skala Global: ENSO & IOD
-    # =============================
-    with col1:
-        st.subheader("🌐 Skala Global")
-        fase_enso = fetch_enso()
-        fase_iod = fetch_iod()
+with col2:
+    st.markdown("### 🌿 NDVI Lokal")
+    st.write(f"**NDVI:** {ndvi_val} (Hijau {'tinggi' if ndvi_val >= 0.7 else 'rendah'})")
+    st.progress(min(ndvi_val, 1.0))
 
-        if isinstance(fase_enso, str):
-            st.success(f"🔴 Fase ENSO: **{fase_enso}**")
-        else:
-            st.warning("❌ Gagal memuat data ENSO.")
+with col3:
+    st.markdown("### 🌊 ENSO & IOD Lokal")
+    st.info(f"**ENSO:** {enso_local}")
+    st.info(f"**IOD:** {iod_local}")
 
-        if isinstance(fase_iod, str):
-            st.success(f"🟠 Fase IOD: **{fase_iod}**")
-        else:
-            st.warning("❌ Gagal memuat data IOD.")
+# -------------------------------
+# GRAFIK HISTORI CURAH HUJAN
+# -------------------------------
+st.write("---")
+st.markdown("### 📊 Curah Hujan 7 Hari Terakhir")
+df_hujan = pd.DataFrame({"Hari": hari, "Curah Hujan (mm)": hujan_data})
+st.bar_chart(df_hujan.set_index("Hari"))
 
-    # =============================
-    # Skala Regional: MJO, Rossby, ITCZ
-    with col2:
-        st.subheader("🗺️ Skala Regional")
-        fase_mjo = fetch_mjo()
-        if isinstance(fase_mjo, str):
-            st.success(f"☁️ MJO Saat Ini: **{fase_mjo}**")
-        else:
-            st.warning("⚠️ Gagal memuat data MJO.")
-
-        rossby = fetch_rossby()
-        itcz = fetch_itcz()
-
-        st.info(f"🌐 Gelombang Rossby: {rossby}")
-        st.info(f"🌧️ Posisi ITCZ: {itcz}")
-
-    # =============================
-    # Skala Lokal
-    with col3:
-        st.subheader(f"🏙️ Skala Lokal: {kota.title()}")
-        if fase_enso == "El Niño":
-            st.markdown("🔴 El Niño: potensi kekeringan tinggi.")
-        elif fase_enso == "La Niña":
-            st.markdown("🔵 La Niña: potensi hujan tinggi / banjir.")
-        else:
-            st.markdown("⚪ ENSO Netral — faktor lokal lebih berperan.")
-
-        if fase_iod == "IOD Positif":
-            st.markdown("🟠 IOD Positif: cuaca lebih kering di barat.")
-        elif fase_iod == "IOD Negatif":
-            st.markdown("🔵 IOD Negatif: potensi hujan meningkat.")
-        else:
-            st.markdown("🟣 IOD Netral — tidak berdampak signifikan.")
-
-        # NDVI dari CSV
-        ndvi_info = fetch_ndvi(kota)
-        st.markdown(ndvi_info)
-
-# =============================
-# Footer Info
-# =============================
-st.markdown("---")
-st.caption("Versi awal pembagian skala global, regional, dan lokal. Data regional akan ditambahkan lebih lanjut.")
+# -------------------------------
+# CATATAN
+# -------------------------------
+st.caption("⚠️ Data sementara (dummy). Data cuaca dan curah hujan akan dihubungkan dengan API atau dataset BMKG.")
