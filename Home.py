@@ -1,115 +1,126 @@
 import streamlit as st
 import pandas as pd
 import requests
-import io
-import plotly.express as px
+from bs4 import BeautifulSoup
+import random
 from datetime import datetime
 
-st.set_page_config(
-    page_title="Dinamika Atmosfer – Home",
-    layout="wide",
-    page_icon="🌏"
-)
+# -------------------------------
+# Fungsi Ambil Data PM dari BMKG
+# -------------------------------
+def get_pm_data():
+    url = "https://pm.meteojuanda.id"
+    pm25 = None
+    pm10 = None
+    try:
+        # 1️⃣ Endpoint JSON (jika tersedia)
+        json_url = url + "/api/data/latest"
+        try:
+            resp_json = requests.get(json_url, timeout=5)
+            if resp_json.status_code == 200:
+                data = resp_json.json()
+                pm25 = data.get("PM25") or data.get("pm25")
+                pm10 = data.get("PM10") or data.get("pm10")
+                if pm25 and pm10:
+                    return float(pm25), float(pm10)
+        except:
+            pass
 
-st.title("🌏 Dinamika Atmosfer Global")
-st.markdown(
-    """
-    Dashboard pemantauan **ENSO (Nino3.4)**, **IOD**, dan **MJO** 
-    menggunakan data _real-time_ dari **NOAA CPC** dan **BOM Australia**.
-    """
-)
+        # 2️⃣ Scraping HTML
+        resp_html = requests.get(url, timeout=10)
+        if resp_html.status_code == 200:
+            soup = BeautifulSoup(resp_html.text, "html.parser")
+            pm25_elem = soup.find("span", {"id": "pm25_value"})
+            pm10_elem = soup.find("span", {"id": "pm10_value"})
+            if pm25_elem:
+                pm25 = float(pm25_elem.text.strip().replace(",", "."))
+            if pm10_elem:
+                pm10 = float(pm10_elem.text.strip().replace(",", "."))
+    except Exception as e:
+        print("Error get_pm_data:", e)
+    return pm25, pm10
 
-# ===========================
-# Helper functions
-# ===========================
-@st.cache_data(ttl=3600)
-def fetch_csv(url, skiprows=0):
-    r = requests.get(url, timeout=30)
-    r.raise_for_status()
-    return pd.read_csv(io.StringIO(r.text), skiprows=skiprows)
+# -------------------------------
+# Konfigurasi Halaman
+# -------------------------------
+st.set_page_config(page_title="Dinamika Atmosfer", layout="wide")
+st.title("🌦️ Dinamika Atmosfer")
+st.caption(f"Last update: {datetime.now().strftime('%d %B %Y %H:%M WIB')}  |  ⚠️ **Sample Data**")
 
-# ===========================
-# 1️⃣ ENSO (Nino3.4) - NOAA CPC
-# ===========================
-st.subheader("1️⃣ ENSO – Nino 3.4 SST Anomaly (°C)")
-try:
-    enso_url = "https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices"
-    df_enso = fetch_csv(enso_url, skiprows=1)
-    df_enso.columns = ["YR","MON","NINO1+2","NINO3","NINO4","NINO3.4"]
-    df_enso["date"] = pd.to_datetime(
-        df_enso["YR"].astype(str) + "-" + df_enso["MON"].astype(str),
-        format="%Y-%m"
-    )
-    df_enso = df_enso.sort_values("date")
+st.markdown("Masukkan nama kota untuk melihat **faktor atmosfer skala Lokal, Regional, dan Global:**")
+kota = st.text_input("Contoh: Surabaya, Sidoarjo, Malang", "Surabaya").title()
+st.write("---")
 
-    fig_enso = px.line(df_enso.tail(120), x="date", y="NINO3.4",
-                       title="Anomali Nino 3.4 (10 tahun terakhir)",
-                       labels={"date":"Tahun","NINO3.4":"Anomali (°C)"})
-    st.plotly_chart(fig_enso, use_container_width=True)
+# -------------------------------
+# DATA DUMMY (sementara)
+# -------------------------------
+ndvi_val = round(random.uniform(0.5, 0.9), 2)
+curah_hujan = random.randint(0, 20)
+anomali_suhu = random.choice([-1, 0, 1, 2])
+mjo_phase = random.choice(["Inaktif", "Aktif di fase 3", "Aktif di fase 5"])
+itcz_pos = random.choice(["Selatan Jawa", "Utara Kalimantan", "Tidak signifikan"])
+enso = random.choice(["Netral", "El Niño Lemah", "La Niña Lemah"])
+iod = random.choice(["Netral", "Positif", "Negatif"])
 
-    last_enso = df_enso.iloc[-1]
-    st.info(f"📊 **Terbaru (bulan {last_enso['date'].strftime('%b %Y')})**: "
-            f"{last_enso['NINO3.4']:.2f} °C")
-except Exception as e:
-    st.error(f"Gagal memuat ENSO data: {e}")
+# -------------------------------
+# 3 KOLOM SKALA
+# -------------------------------
+col1, col2, col3 = st.columns(3)
 
-# ===========================
-# 2️⃣ Indian Ocean Dipole (IOD) - BOM Australia
-# ===========================
-st.subheader("2️⃣ Indian Ocean Dipole (IOD) Index (°C)")
-try:
-    iod_url = "https://www.bom.gov.au/climate/enso/indices/weekly.iod.index.csv"
-    df_iod = fetch_csv(iod_url)
-    df_iod["Date"] = pd.to_datetime(df_iod["Year"].astype(str) + df_iod["Week"].astype(str) + '1',
-                                    format='%Y%U%w')  # Sunday as start
-    df_iod = df_iod.sort_values("Date")
+with col1:
+    st.markdown("### 🏠 Skala Lokal")
+    st.info(f"**NDVI:** {ndvi_val}\n\n**Curah Hujan:** {curah_hujan} mm")
+    if anomali_suhu > 0:
+        st.error(f"Anomali suhu: +{anomali_suhu}°C di atas normal")
+    elif anomali_suhu < 0:
+        st.warning(f"Anomali suhu: {anomali_suhu}°C di bawah normal")
+    else:
+        st.success("Suhu normal")
 
-    fig_iod = px.line(df_iod.tail(260), x="Date", y="IOD",
-                      title="IOD Mingguan (5 tahun terakhir)",
-                      labels={"Date":"Tahun","IOD":"IOD (°C)"})
-    st.plotly_chart(fig_iod, use_container_width=True)
+    # Data kualitas udara
+    if kota in ["Surabaya", "Sidoarjo"]:
+        pm25, pm10 = get_pm_data()
+        if pm25 and pm10:
+            st.write(f"**PM2.5:** {pm25} µg/m³")
+            st.write(f"**PM10:** {pm10} µg/m³")
+            if pm25 < 25 and pm10 < 50:
+                st.success("Kualitas udara: Baik")
+            elif pm25 < 50 and pm10 < 100:
+                st.warning("Kualitas udara: Sedang")
+            else:
+                st.error("Kualitas udara: Tidak Sehat")
+        else:
+            st.warning("⚠️ Data kualitas udara BMKG tidak dapat diakses saat ini.")
 
-    last_iod = df_iod.iloc[-1]
-    st.info(f"📊 **Terbaru (minggu ke-{int(last_iod['Week'])}, {int(last_iod['Year'])})**: "
-            f"{last_iod['IOD']:.2f} °C")
-except Exception as e:
-    st.error(f"Gagal memuat IOD data: {e}")
+with col2:
+    st.markdown("### 🌎 Skala Regional")
+    st.info(f"**MJO:** {mjo_phase}\n\n**Posisi ITCZ:** {itcz_pos}")
+    st.write("**Status Hujan Regional:** Normal")
 
-# ===========================
-# 3️⃣ Madden–Julian Oscillation (MJO) – RMM Index
-# ===========================
-st.subheader("3️⃣ Madden–Julian Oscillation (MJO) – RMM1 & RMM2")
-try:
-    # NOAA menyediakan RMM daily
-    mjo_url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/projRMM.74toRealtime.txt"
-    r = requests.get(mjo_url, timeout=30)
-    r.raise_for_status()
-    raw = [x.split() for x in r.text.splitlines() if not x.startswith("#")]
-    df_mjo = pd.DataFrame(raw, columns=["year","month","day","RMM1","RMM2","phase","amplitude"])
-    df_mjo = df_mjo.astype({"year":int,"month":int,"day":int,
-                            "RMM1":float,"RMM2":float,"phase":int,"amplitude":float})
-    df_mjo["date"] = pd.to_datetime(df_mjo[["year","month","day"]])
-    df_mjo = df_mjo.sort_values("date")
+with col3:
+    st.markdown("### 🌐 Skala Global")
+    st.info(f"**ENSO:** {enso}\n\n**IOD:** {iod}")
+    st.write("**SST Anomali:** +0.5°C *(sample)*")
 
-    fig_mjo = px.line(df_mjo.tail(90), x="date", y="amplitude",
-                      title="Amplitudo MJO (90 hari terakhir)",
-                      labels={"date":"Tanggal","amplitude":"Amplitude"})
-    st.plotly_chart(fig_mjo, use_container_width=True)
+# -------------------------------
+# Narasi Fenomena Terkini
+# -------------------------------
+st.write("---")
+st.markdown("### 📝 Fenomena Atmosfer Terkini")
 
-    last_mjo = df_mjo.iloc[-1]
-    st.info(
-        f"📊 **Terbaru ({last_mjo['date'].strftime('%d %b %Y')})**: "
-        f"Phase {last_mjo['phase']} | Amplitudo {last_mjo['amplitude']:.2f}"
-    )
-except Exception as e:
-    st.error(f"Gagal memuat MJO data: {e}")
+narasi = f"Beberapa hari terakhir, {kota} mengalami curah hujan {curah_hujan} mm per hari. "
+if anomali_suhu > 0:
+    narasi += f"Suhu rata-rata {anomali_suhu}°C lebih tinggi dari normal. "
+elif anomali_suhu < 0:
+    narasi += f"Suhu rata-rata {abs(anomali_suhu)}°C lebih rendah dari normal. "
 
-# ===========================
-# Footer
-# ===========================
-st.markdown("---")
-st.caption(
-    "Data: [NOAA CPC](https://www.cpc.ncep.noaa.gov/) & "
-    "[BOM Australia](https://www.bom.gov.au/). "
-    "Update otomatis setiap refresh (cache 1 jam)."
-)
+if kota in ["Surabaya", "Sidoarjo"]:
+    if 'pm25' in locals() and pm25 and pm10:
+        narasi += f"Kualitas udara menunjukkan PM2.5={pm25} µg/m³ dan PM10={pm10} µg/m³. "
+
+narasi += f"Secara regional, {mjo_phase}, ITCZ berada di {itcz_pos}. "
+narasi += f"Fenomena global menunjukkan ENSO {enso} dan IOD {iod}."
+
+st.info(narasi)
+
+st.caption("⚠️ Data pada halaman ini masih berupa *sample* dan akan diganti dengan data real-time pada pengembangan selanjutnya.")
