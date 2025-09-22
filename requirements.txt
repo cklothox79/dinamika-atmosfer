@@ -7,5 +7,7 @@ pandas>=2.2.2
 beautifulsoup4
 matplotlib
 requests
+streamlit-autorefresh
+
 
 
