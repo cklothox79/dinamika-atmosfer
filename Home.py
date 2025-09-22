@@ -1,152 +1,115 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import requests
-import plotly.graph_objects as go
+import io
+import plotly.express as px
 from datetime import datetime
 
-st.set_page_config(page_title="🌏 Dinamika Atmosfer Global", layout="wide")
+st.set_page_config(
+    page_title="Dinamika Atmosfer – Home",
+    layout="wide",
+    page_icon="🌏"
+)
+
 st.title("🌏 Dinamika Atmosfer Global")
-st.markdown("""
-Dashboard pemantauan **ENSO (Nino3.4)**, **IOD**, dan **MJO**  
-Menggunakan data real-time dari **NOAA CPC** & **BOM Australia** (otomatis fallback bila gagal).
-""")
-st.write("---")
+st.markdown(
+    """
+    Dashboard pemantauan **ENSO (Nino3.4)**, **IOD**, dan **MJO** 
+    menggunakan data _real-time_ dari **NOAA CPC** dan **BOM Australia**.
+    """
+)
 
-# -------------------------------------------------------
-# 🔄 Tombol Refresh Manual
-# -------------------------------------------------------
-if st.button("🔄 Refresh Data"):
-    st.rerun()
+# ===========================
+# Helper functions
+# ===========================
+@st.cache_data(ttl=3600)
+def fetch_csv(url, skiprows=0):
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    return pd.read_csv(io.StringIO(r.text), skiprows=skiprows)
 
-headers = {"User-Agent": "Mozilla/5.0"}
-
-# -------------------------------------------------------
-# 1️⃣ ENSO – Nino 3.4 SST Anomaly
-# -------------------------------------------------------
+# ===========================
+# 1️⃣ ENSO (Nino3.4) - NOAA CPC
+# ===========================
 st.subheader("1️⃣ ENSO – Nino 3.4 SST Anomaly (°C)")
-enso_url = "https://psl.noaa.gov/gcos_wgsp/Timeseries/Data/nino34.long.anom.data"
-
-def parse_enso(text):
-    df_list = []
-    lines = text.splitlines()
-    months = lines[1].split()
-    for line in lines[2:]:
-        parts = line.split()
-        if len(parts) >= 13:
-            year = parts[0]
-            vals = parts[1:13]
-            for m, v in zip(months, vals):
-                try:
-                    df_list.append([
-                        datetime.strptime(f"{year}-{m}", "%Y-%b"),
-                        float(v)
-                    ])
-                except:
-                    pass
-    return pd.DataFrame(df_list, columns=["Date","Anomaly"])
-
 try:
-    r = requests.get(enso_url, headers=headers, timeout=10)
-    r.raise_for_status()
-    enso_df = parse_enso(r.text).tail(36)
-    status_enso = "✅ Data asli NOAA CPC"
+    enso_url = "https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices"
+    df_enso = fetch_csv(enso_url, skiprows=1)
+    df_enso.columns = ["YR","MON","NINO1+2","NINO3","NINO4","NINO3.4"]
+    df_enso["date"] = pd.to_datetime(
+        df_enso["YR"].astype(str) + "-" + df_enso["MON"].astype(str),
+        format="%Y-%m"
+    )
+    df_enso = df_enso.sort_values("date")
+
+    fig_enso = px.line(df_enso.tail(120), x="date", y="NINO3.4",
+                       title="Anomali Nino 3.4 (10 tahun terakhir)",
+                       labels={"date":"Tahun","NINO3.4":"Anomali (°C)"})
+    st.plotly_chart(fig_enso, use_container_width=True)
+
+    last_enso = df_enso.iloc[-1]
+    st.info(f"📊 **Terbaru (bulan {last_enso['date'].strftime('%b %Y')})**: "
+            f"{last_enso['NINO3.4']:.2f} °C")
 except Exception as e:
-    enso_df = pd.DataFrame({
-        "Date": pd.date_range("2022-01-01", periods=36, freq="M"),
-        "Anomaly": np.random.uniform(-1, 1, 36)
-    })
-    status_enso = f"⚠️ Gagal ENSO asli → Dummy digunakan"
+    st.error(f"Gagal memuat ENSO data: {e}")
 
-st.caption(status_enso)
-fig_enso = go.Figure()
-fig_enso.add_trace(go.Scatter(x=enso_df["Date"], y=enso_df["Anomaly"],
-                              mode="lines+markers", name="Nino3.4"))
-fig_enso.update_layout(title="ENSO Nino3.4 SST Anomaly (°C)",
-                       xaxis_title="Tanggal", yaxis_title="Anomali (°C)",
-                       height=400)
-st.plotly_chart(fig_enso, use_container_width=True)
-
-
-# -------------------------------------------------------
-# 2️⃣ Indian Ocean Dipole (IOD)
-# -------------------------------------------------------
+# ===========================
+# 2️⃣ Indian Ocean Dipole (IOD) - BOM Australia
+# ===========================
 st.subheader("2️⃣ Indian Ocean Dipole (IOD) Index (°C)")
-iod_url = "https://www.bom.gov.au/climate/enso/indices/weekly.iod.index.csv"
-
 try:
-    r = requests.get(iod_url, headers=headers, timeout=10)
-    r.raise_for_status()
-    df_iod = pd.read_csv(pd.compat.StringIO(r.text))
-    status_iod = "✅ Data asli BOM Australia"
-    st.line_chart(df_iod.set_index(df_iod.columns[0]))
+    iod_url = "https://www.bom.gov.au/climate/enso/indices/weekly.iod.index.csv"
+    df_iod = fetch_csv(iod_url)
+    df_iod["Date"] = pd.to_datetime(df_iod["Year"].astype(str) + df_iod["Week"].astype(str) + '1',
+                                    format='%Y%U%w')  # Sunday as start
+    df_iod = df_iod.sort_values("Date")
+
+    fig_iod = px.line(df_iod.tail(260), x="Date", y="IOD",
+                      title="IOD Mingguan (5 tahun terakhir)",
+                      labels={"Date":"Tahun","IOD":"IOD (°C)"})
+    st.plotly_chart(fig_iod, use_container_width=True)
+
+    last_iod = df_iod.iloc[-1]
+    st.info(f"📊 **Terbaru (minggu ke-{int(last_iod['Week'])}, {int(last_iod['Year'])})**: "
+            f"{last_iod['IOD']:.2f} °C")
 except Exception as e:
-    st.warning("⚠️ Data CSV BOM saat ini sering 403 Forbidden.\n"
-               "Silakan akses langsung di: "
-               "[👉 BOM IOD Weekly Data](https://www.bom.gov.au/climate/enso/indices/weekly.iod.index.shtml)")
-    status_iod = f"⚠️ Gagal IOD → Link manual saja"
+    st.error(f"Gagal memuat IOD data: {e}")
 
-st.caption(status_iod)
-
-
-# -------------------------------------------------------
-# 3️⃣ Madden–Julian Oscillation (MJO)
-# -------------------------------------------------------
+# ===========================
+# 3️⃣ Madden–Julian Oscillation (MJO) – RMM Index
+# ===========================
 st.subheader("3️⃣ Madden–Julian Oscillation (MJO) – RMM1 & RMM2")
-mjo_url_main = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/projRMM.74toRealtime.txt"
-mjo_url_fallback = "https://psl.noaa.gov/mjo/mjoindex/projRMM.74toRealtime.txt"
-
-def parse_mjo(text):
-    data = []
-    for line in text.splitlines():
-        if line.strip() and line[0].isdigit():
-            parts = line.split()
-            if len(parts) >= 5:
-                try:
-                    date = f"{parts[0]}-{parts[1]}-{parts[2]}"
-                    rmm1 = float(parts[3])
-                    rmm2 = float(parts[4])
-                    data.append([date, rmm1, rmm2])
-                except:
-                    pass
-    return pd.DataFrame(data, columns=["Date","RMM1","RMM2"])
-
 try:
-    r = requests.get(mjo_url_main, headers=headers, timeout=10)
+    # NOAA menyediakan RMM daily
+    mjo_url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/projRMM.74toRealtime.txt"
+    r = requests.get(mjo_url, timeout=30)
     r.raise_for_status()
-    mjo_df = parse_mjo(r.text).tail(60)
-    status_mjo = "✅ Data asli NOAA CPC"
-except:
-    try:
-        r = requests.get(mjo_url_fallback, headers=headers, timeout=10)
-        r.raise_for_status()
-        mjo_df = parse_mjo(r.text).tail(60)
-        status_mjo = "⚠️ Gagal sumber utama → Fallback PSL NOAA"
-    except:
-        dates = pd.date_range("2025-01-01", periods=30, freq="D")
-        mjo_df = pd.DataFrame({
-            "Date": dates.strftime("%Y-%m-%d"),
-            "RMM1": np.sin(np.linspace(0,6,30)),
-            "RMM2": np.cos(np.linspace(0,6,30))
-        })
-        status_mjo = "❌ Gagal semua sumber → Dummy digunakan"
+    raw = [x.split() for x in r.text.splitlines() if not x.startswith("#")]
+    df_mjo = pd.DataFrame(raw, columns=["year","month","day","RMM1","RMM2","phase","amplitude"])
+    df_mjo = df_mjo.astype({"year":int,"month":int,"day":int,
+                            "RMM1":float,"RMM2":float,"phase":int,"amplitude":float})
+    df_mjo["date"] = pd.to_datetime(df_mjo[["year","month","day"]])
+    df_mjo = df_mjo.sort_values("date")
 
-st.caption(status_mjo)
-fig_mjo = go.Figure()
-fig_mjo.add_trace(go.Scatter(x=mjo_df["Date"], y=mjo_df["RMM1"],
-                             mode="lines", name="RMM1"))
-fig_mjo.add_trace(go.Scatter(x=mjo_df["Date"], y=mjo_df["RMM2"],
-                             mode="lines", name="RMM2"))
-fig_mjo.update_layout(title="MJO RMM1 & RMM2 Index",
-                      xaxis_title="Tanggal", yaxis_title="Index",
-                      height=400)
-st.plotly_chart(fig_mjo, use_container_width=True)
+    fig_mjo = px.line(df_mjo.tail(90), x="date", y="amplitude",
+                      title="Amplitudo MJO (90 hari terakhir)",
+                      labels={"date":"Tanggal","amplitude":"Amplitude"})
+    st.plotly_chart(fig_mjo, use_container_width=True)
 
+    last_mjo = df_mjo.iloc[-1]
+    st.info(
+        f"📊 **Terbaru ({last_mjo['date'].strftime('%d %b %Y')})**: "
+        f"Phase {last_mjo['phase']} | Amplitudo {last_mjo['amplitude']:.2f}"
+    )
+except Exception as e:
+    st.error(f"Gagal memuat MJO data: {e}")
 
-# -------------------------------------------------------
+# ===========================
 # Footer
-# -------------------------------------------------------
-st.write("---")
-st.caption("Data sumber: [NOAA CPC](https://www.cpc.ncep.noaa.gov/) | "
-           "[BOM Australia](https://www.bom.gov.au/) | Fallback: NOAA PSL")
-
+# ===========================
+st.markdown("---")
+st.caption(
+    "Data: [NOAA CPC](https://www.cpc.ncep.noaa.gov/) & "
+    "[BOM Australia](https://www.bom.gov.au/). "
+    "Update otomatis setiap refresh (cache 1 jam)."
+)
