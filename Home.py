@@ -17,7 +17,7 @@ st.write("---")
 # 🔄 Tombol Refresh Manual
 # -------------------------------------------------------
 if st.button("🔄 Refresh Data"):
-    st.experimental_rerun()
+    st.rerun()
 
 headers = {"User-Agent": "Mozilla/5.0"}
 
@@ -149,3 +149,4 @@ st.plotly_chart(fig_mjo, use_container_width=True)
 st.write("---")
 st.caption("Data sumber: [NOAA CPC](https://www.cpc.ncep.noaa.gov/) | "
            "[BOM Australia](https://www.bom.gov.au/) | Fallback: NOAA PSL")
+
