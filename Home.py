@@ -5,9 +5,9 @@ from bs4 import BeautifulSoup
 import random
 from datetime import datetime
 
-# -------------------------------
+# =====================================================
 # Fungsi Ambil Data PM dari BMKG
-# -------------------------------
+# =====================================================
 def get_pm_data():
     url = "https://pm.meteojuanda.id"
     pm25 = None
@@ -26,7 +26,7 @@ def get_pm_data():
         except:
             pass
 
-        # 2️⃣ Scraping HTML
+        # 2️⃣ Scraping HTML (fallback)
         resp_html = requests.get(url, timeout=10)
         if resp_html.status_code == 200:
             soup = BeautifulSoup(resp_html.text, "html.parser")
@@ -40,20 +40,22 @@ def get_pm_data():
         print("Error get_pm_data:", e)
     return pm25, pm10
 
-# -------------------------------
+# =====================================================
 # Konfigurasi Halaman
-# -------------------------------
+# =====================================================
 st.set_page_config(page_title="Dinamika Atmosfer", layout="wide")
 st.title("🌦️ Dinamika Atmosfer")
-st.caption(f"Last update: {datetime.now().strftime('%d %B %Y %H:%M WIB')}  |  ⚠️ **Sample Data**")
+st.caption(
+    f"Last update: {datetime.now().strftime('%d %B %Y %H:%M WIB')}  |  ⚠️ **Sample Data**"
+)
 
 st.markdown("Masukkan nama kota untuk melihat **faktor atmosfer skala Lokal, Regional, dan Global:**")
 kota = st.text_input("Contoh: Surabaya, Sidoarjo, Malang", "Surabaya").title()
 st.write("---")
 
-# -------------------------------
+# =====================================================
 # DATA DUMMY (sementara)
-# -------------------------------
+# =====================================================
 ndvi_val = round(random.uniform(0.5, 0.9), 2)
 curah_hujan = random.randint(0, 20)
 anomali_suhu = random.choice([-1, 0, 1, 2])
@@ -62,11 +64,12 @@ itcz_pos = random.choice(["Selatan Jawa", "Utara Kalimantan", "Tidak signifikan"
 enso = random.choice(["Netral", "El Niño Lemah", "La Niña Lemah"])
 iod = random.choice(["Netral", "Positif", "Negatif"])
 
-# -------------------------------
+# =====================================================
 # 3 KOLOM SKALA
-# -------------------------------
+# =====================================================
 col1, col2, col3 = st.columns(3)
 
+# --- Skala Lokal
 with col1:
     st.markdown("### 🏠 Skala Lokal")
     st.info(f"**NDVI:** {ndvi_val}\n\n**Curah Hujan:** {curah_hujan} mm")
@@ -92,19 +95,21 @@ with col1:
         else:
             st.warning("⚠️ Data kualitas udara BMKG tidak dapat diakses saat ini.")
 
+# --- Skala Regional
 with col2:
     st.markdown("### 🌎 Skala Regional")
     st.info(f"**MJO:** {mjo_phase}\n\n**Posisi ITCZ:** {itcz_pos}")
     st.write("**Status Hujan Regional:** Normal")
 
+# --- Skala Global
 with col3:
     st.markdown("### 🌐 Skala Global")
     st.info(f"**ENSO:** {enso}\n\n**IOD:** {iod}")
     st.write("**SST Anomali:** +0.5°C *(sample)*")
 
-# -------------------------------
+# =====================================================
 # Narasi Fenomena Terkini
-# -------------------------------
+# =====================================================
 st.write("---")
 st.markdown("### 📝 Fenomena Atmosfer Terkini")
 
